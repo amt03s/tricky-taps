@@ -4,10 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.trickytaps.ui.theme.TrickyTapsTheme
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,16 +20,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen() {
-    val navController = rememberNavController()
+    TrickyTapsLandingPage(
+        onSinglePlayer = { /* Navigate to Single Player Screen */ },
+        onMultiPlayer = { /* Navigate to Multiplayer Screen */ }
+    )
+}
 
-    NavHost(navController, startDestination = "landingPage") {
-        composable("landingPage") {
-            TrickyTapsLandingPage(
-                onSinglePlayer = { navController.navigate("gameScreen") },
-                onMultiPlayer = { navController.navigate("multiplayerScreen") }
-            )
-        }
-        composable("gameScreen") { GameScreen() }
-        composable("multiplayerScreen") { GameScreen() }
-    }
+@Preview (showBackground = true)
+@Composable
+fun MainScreenPreview(){
+    MainScreen()
 }

@@ -28,7 +28,7 @@ fun TrickyTapsLandingPage(onSinglePlayer: () -> Unit, onMultiPlayer: () -> Unit)
                 text = "Tricky Taps",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = Color.Black,
                 textAlign = TextAlign.Center
             )
 

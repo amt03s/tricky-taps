@@ -37,10 +37,6 @@ fun MainScreen() {
     }
 }
 
-@Composable
-fun MultiplayerScreen() {
-    TODO("Not yet implemented")
-}
 
 @Preview (showBackground = true)
 @Composable

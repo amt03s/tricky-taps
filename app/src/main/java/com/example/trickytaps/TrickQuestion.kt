@@ -1,5 +1,7 @@
 package com.example.trickytaps
 
+
+
 data class TrickQuestion(
     val question: String,
     val options: List<String>,

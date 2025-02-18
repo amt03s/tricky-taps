@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -15,14 +16,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             TrickyTapsTheme {
-                MainScreen()
+                AppNavigation()
             }
         }
     }
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(navController: NavController) {
     val navController = rememberNavController()
 
     NavHost(navController, startDestination = "landingPage") {
@@ -32,8 +33,8 @@ fun MainScreen() {
                 onMultiPlayer = { navController.navigate("multiplayerScreen") }
             )
         }
-        composable("gameScreen") { GameScreen() }
-        composable("multiplayerScreen") { MultiplayerScreen() }
+        composable("gameScreen") { GameScreen(navController) }
+        composable("multiplayerScreen") { MultiplayerScreen(navController) }
     }
 }
 
@@ -41,5 +42,6 @@ fun MainScreen() {
 @Preview (showBackground = true)
 @Composable
 fun MainScreenPreview(){
-    MainScreen()
+    val navController = rememberNavController()
+    MainScreen(navController)
 }

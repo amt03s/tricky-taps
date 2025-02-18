@@ -1,8 +1,5 @@
 package com.example.trickytaps
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,84 +14,93 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 
-class MultiplayerActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            MultiplayerScreen()
-        }
-    }
-}
-
 @Composable
-fun MultiplayerScreen() {
+fun MultiplayerScreen(navController: NavController) {
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
-    var timeLeft by remember { mutableStateOf(60) } // Game timer
+    var timeLeft by remember { mutableStateOf(30) } // Game timer
     var gameOver by remember { mutableStateOf(false) }
+    var paused by remember { mutableStateOf(false) } // Pause state
     val currentQuestion = remember { mutableStateOf(generateTrickQuestion()) }
     val playerScores = remember { mutableStateListOf(0, 0, 0) } // Scores for 3 players
 
     // Countdown Timer
-    LaunchedEffect(timeLeft) {
-        while (timeLeft > 0) {
-            delay(1000L)
-            timeLeft--
+    LaunchedEffect(timeLeft, paused) {
+        while (timeLeft > 0 && !gameOver) {
+            if (!paused) {
+                delay(1000L)
+                timeLeft--
+            }
+            else {
+                // Keep checking if the game is resumed
+                while (paused) {
+                    delay(100L)
+                }
+            }
         }
-        gameOver = true
+        if (timeLeft == 0) gameOver = true
     }
 
     if (gameOver) {
-        MultiplayerGameOverScreen(playerScores)
+        MultiplayerGameOverScreen(playerScores, navController) {
+            timeLeft = 30
+            gameOver = false
+            playerScores.fill(0) // Reset scores
+            currentQuestion.value = generateTrickQuestion()
+        }
     } else {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Text(text = "Time Left: $timeLeft", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "${currentQuestion.value.question}", fontSize = 22.sp, textAlign = TextAlign.Center)
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                for (playerIndex in 0 until 3) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = "Player ${playerIndex + 1}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
+                // Timer Display
+                Text(text = "Time Left: $timeLeft", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = "${currentQuestion.value.question}", fontSize = 22.sp, textAlign = TextAlign.Center)
+                Spacer(modifier = Modifier.height(24.dp))
+                // Answer Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    for (playerIndex in 0 until 3) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = "Player ${playerIndex + 1}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                        if (isPortrait) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(0.8f),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                currentQuestion.value.options.forEach { option ->
-                                    AnswerButton(option, playerIndex, currentQuestion, playerScores, isPortrait)
+                            if (isPortrait) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(0.8f),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    currentQuestion.value.options.forEach { option ->
+                                        AnswerButton(option, playerIndex, currentQuestion, playerScores, isPortrait)
+                                    }
                                 }
-                            }
-                        } else {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                val options = currentQuestion.value.options.chunked(2)
-                                options.forEach { row ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceEvenly
-                                    ) {
-                                        row.forEach { option ->
-                                            AnswerButton(option, playerIndex, currentQuestion, playerScores, isPortrait)
+                            } else {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val options = currentQuestion.value.options.chunked(2)
+                                    options.forEach { row ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceEvenly
+                                        ) {
+                                            row.forEach { option ->
+                                                AnswerButton(option, playerIndex, currentQuestion, playerScores, isPortrait)
+                                            }
                                         }
                                     }
                                 }
@@ -102,6 +108,16 @@ fun MultiplayerScreen() {
                         }
                     }
                 }
+            }
+
+            // Pause Button (Top Right)
+            Button(
+                onClick = { paused = !paused },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                Text(if (paused) "Resume" else "Pause")
             }
         }
     }
@@ -127,10 +143,10 @@ fun AnswerButton(option: String, playerIndex: Int, currentQuestion: MutableState
         Text(text = option, fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center)
     }
 }
-
 @Composable
-fun MultiplayerGameOverScreen(scores: List<Int>) {
+fun MultiplayerGameOverScreen(scores: List<Int>, navController: NavController, onRestart: () -> Unit) {
     val winner = scores.indices.maxByOrNull { scores[it] } ?: 0
+
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -139,8 +155,16 @@ fun MultiplayerGameOverScreen(scores: List<Int>) {
         Text(text = "Game Over!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Text(text = "Winner: Player ${winner + 1} with ${scores[winner]} points!", fontSize = 24.sp)
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { /* Restart Game */ }) {
+        Button(onClick = { onRestart() }) {
             Text(text = "Play Again")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = {
+            navController.navigate("landingPage"){
+                popUpTo("landingPage") { inclusive = true }
+            }
+        }) {
+            Text(text = "Quit")
         }
     }
 }

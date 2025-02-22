@@ -1,5 +1,8 @@
 package com.example.trickytaps
 
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,63 +17,73 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
-import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 
+class MultiplayerActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MultiplayerScreen(playerCount = 2)
+        }
+    }
+}
+
 @Composable
-fun MultiplayerScreen(navController: NavController) {
+fun MultiplayerScreen(playerCount: Int) {
+    var timeLeft by remember { mutableStateOf(60) }
+    var gameOver by remember { mutableStateOf(false) }
+    var isPaused by remember { mutableStateOf(false) }
+    val currentQuestion = remember { mutableStateOf(generateTrickQuestion()) }
+    val playerScores = remember { mutableStateListOf(*IntArray(playerCount) { 0 }.toTypedArray()) }
+
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
-    var timeLeft by remember { mutableStateOf(30) } // Game timer
-    var gameOver by remember { mutableStateOf(false) }
-    var paused by remember { mutableStateOf(false) } // Pause state
-    val currentQuestion = remember { mutableStateOf(generateTrickQuestion()) }
-    val playerScores = remember { mutableStateListOf(0, 0, 0) } // Scores for 3 players
+    LaunchedEffect(isPortrait) {
+        isPaused = isPortrait
+    }
 
-    // Countdown Timer
-    LaunchedEffect(timeLeft, paused) {
-        while (timeLeft > 0 && !gameOver) {
-            if (!paused) {
-                delay(1000L)
-                timeLeft--
-            }
-            else {
-                // Keep checking if the game is resumed
-                while (paused) {
-                    delay(100L)
-                }
-            }
+    LaunchedEffect(timeLeft) {
+        while (timeLeft > 0 && !isPaused) {
+            delay(1000L)
+            timeLeft--
         }
         if (timeLeft == 0) gameOver = true
     }
 
     if (gameOver) {
-        MultiplayerGameOverScreen(playerScores, navController) {
-            timeLeft = 30
-            gameOver = false
-            playerScores.fill(0) // Reset scores
-            currentQuestion.value = generateTrickQuestion()
-        }
+        MultiplayerGameOverScreen(playerScores)
     } else {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                // Timer Display
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            if (isPaused) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Rotate your device back to Landscape to continue!",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        color = Color.Red
+                    )
+                }
+            } else {
                 Text(text = "Time Left: $timeLeft", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "${currentQuestion.value.question}", fontSize = 22.sp, textAlign = TextAlign.Center)
+                Text(text = currentQuestion.value.question, fontSize = 22.sp, textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(24.dp))
-                // Answer Buttons
+
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxSize(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    for (playerIndex in 0 until 3) {
+                    for (playerIndex in 0 until playerCount) {
                         Column(
                             modifier = Modifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -78,46 +91,20 @@ fun MultiplayerScreen(navController: NavController) {
                             Text(text = "Player ${playerIndex + 1}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            if (isPortrait) {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(0.8f),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    currentQuestion.value.options.forEach { option ->
-                                        AnswerButton(option, playerIndex, currentQuestion, playerScores, isPortrait)
-                                    }
-                                }
-                            } else {
-                                Column(
+                            val options = currentQuestion.value.options.chunked(2)
+                            options.forEach { rowOptions ->
+                                Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.SpaceEvenly
                                 ) {
-                                    val options = currentQuestion.value.options.chunked(2)
-                                    options.forEach { row ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceEvenly
-                                        ) {
-                                            row.forEach { option ->
-                                                AnswerButton(option, playerIndex, currentQuestion, playerScores, isPortrait)
-                                            }
-                                        }
+                                    rowOptions.forEach { option ->
+                                        AnswerButton(option, playerIndex, currentQuestion, playerScores, isPortrait)
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-
-            // Pause Button (Top Right)
-            Button(
-                onClick = { paused = !paused },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-            ) {
-                Text(if (paused) "Resume" else "Pause")
             }
         }
     }
@@ -143,10 +130,10 @@ fun AnswerButton(option: String, playerIndex: Int, currentQuestion: MutableState
         Text(text = option, fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center)
     }
 }
-@Composable
-fun MultiplayerGameOverScreen(scores: List<Int>, navController: NavController, onRestart: () -> Unit) {
-    val winner = scores.indices.maxByOrNull { scores[it] } ?: 0
 
+@Composable
+fun MultiplayerGameOverScreen(scores: List<Int>) {
+    val winner = scores.indices.maxByOrNull { scores[it] } ?: 0
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -155,16 +142,8 @@ fun MultiplayerGameOverScreen(scores: List<Int>, navController: NavController, o
         Text(text = "Game Over!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Text(text = "Winner: Player ${winner + 1} with ${scores[winner]} points!", fontSize = 24.sp)
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { onRestart() }) {
+        Button(onClick = { /* Restart Game */ }) {
             Text(text = "Play Again")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            navController.navigate("landingPage"){
-                popUpTo("landingPage") { inclusive = true }
-            }
-        }) {
-            Text(text = "Quit")
         }
     }
 }

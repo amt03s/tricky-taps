@@ -44,7 +44,7 @@ fun TrickyTapsLandingPage(onSinglePlayer: () -> Unit, onMultiPlayer: () -> Unit)
             }
 
             Button(
-                onClick = onMultiPlayer,
+                onClick = onMultiPlayer, // Navigates to player selection
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
@@ -56,3 +56,4 @@ fun TrickyTapsLandingPage(onSinglePlayer: () -> Unit, onMultiPlayer: () -> Unit)
         }
     }
 }
+

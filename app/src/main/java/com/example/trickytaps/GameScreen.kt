@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,33 +22,38 @@ import kotlinx.coroutines.delay
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController, startDestination = "mainScreen") {
-        composable("mainScreen") { MainScreen(navController) }
+    NavHost(navController, startDestination = "landingPage") {
+        composable("landingPage") {
+            MainScreen(navController)
+        }
         composable("gameScreen") { GameScreen(navController) }
+        composable("multiplayerModeSelection") {
+            MultiplayerModeSelectionScreen(navController)
+        }
+        composable("rotateScreen/{playerCount}") { backStackEntry ->
+            val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
+            RotateToLandscapeScreen(navController, playerCount)
+        }
+        composable("multiplayerScreen/{playerCount}") { backStackEntry ->
+            val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
+            MultiplayerScreen(playerCount)
+        }
     }
 }
 
 @Composable
 fun GameScreen(navController: NavController) {
-    var score by remember { mutableStateOf(0) }
+    var score by remember { mutableIntStateOf(0) }
     var timeLeft by remember { mutableStateOf(30) } // 30-second gameplay
     var currentQuestion by remember { mutableStateOf(generateTrickQuestion()) }
     var paused by remember { mutableStateOf(false) }
     var gameOver by remember { mutableStateOf(false) }
 
-    // Countdown Timer
+    // Countdown Timer (Only runs if not paused)
     LaunchedEffect(timeLeft, paused) {
-        while (timeLeft > 0 && !gameOver) {
-            if (!paused) {
-                delay(1000L)
-                timeLeft--
-            }
-            else {
-                // Keep checking if the game is resumed
-                while (paused) {
-                    delay(100L)
-                }
-            }
+        while (timeLeft > 0 && !paused && !gameOver) {
+            delay(1000L)
+            timeLeft--
         }
         if (timeLeft == 0) gameOver = true
     }
@@ -99,6 +105,7 @@ fun GameScreen(navController: NavController) {
                     }
                 }
             }
+
             // Pause Button (Top Right)
             Button(
                 onClick = { paused = !paused },
@@ -123,16 +130,54 @@ fun GameOverScreen(score: Int, navController: NavController, onRestart: () -> Un
         Text(text = "Game Over!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Text(text = "Final Score: $score", fontSize = 24.sp)
         Spacer(modifier = Modifier.height(16.dp))
+
         Button(onClick = { onRestart() }) {
             Text(text = "Play Again")
         }
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Button(onClick = {
-            navController.navigate("landingPage") {
-                popUpTo("landingPage") { inclusive = true } // Clears previous screens
+            navController.navigate("mainScreen") {
+                popUpTo("mainScreen") { inclusive = true } // Clears previous screens
             }
-        }){
+        }) {
             Text(text = "Quit")
         }
     }
 }
+
+@Composable
+fun RotateToLandscapeScreen(navController: NavController, playerCount: Int) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+    // If already in landscape mode, navigate to the game
+    LaunchedEffect(isLandscape) {
+        if (isLandscape) {
+            navController.navigate("multiplayerScreen/$playerCount") {
+                popUpTo("rotateScreen/$playerCount") { inclusive = true }
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Please rotate your device to Landscape mode",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            text = "The game will start automatically when you rotate your device.",
+            fontSize = 16.sp
+        )
+    }
+}
+

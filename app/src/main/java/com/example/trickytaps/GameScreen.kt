@@ -13,59 +13,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
-
-@Composable
-fun AppNavigation() {
-    val navController = rememberNavController()
-
-    NavHost(navController, startDestination = "landingPage") {
-        composable("landingPage") {
-            MainScreen(navController)
-        }
-        composable("multiplayerModeSelection") {
-            MultiplayerModeSelectionScreen(navController)
-        }
-        composable("rotateScreen/{playerCount}") { backStackEntry ->
-            val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
-            RotateToLandscapeScreen(navController, playerCount)
-        }
-        composable("multiplayerScreen/{playerCount}") { backStackEntry ->
-            val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
-            MultiplayerScreen(playerCount)
-        }
-        composable("authScreen") { AuthScreen(navController) }
-        composable("usernameScreen/{userId}") { backStackEntry ->
-            val userId = backStackEntry.arguments?.getString("userId") ?: ""
-            UsernameScreen(navController, userId)
-        }
-        composable("gameScreen/{username}") { backStackEntry ->
-            val username = backStackEntry.arguments?.getString("username") ?: "Player"
-            GameScreen(navController, username, FirebaseFirestore.getInstance())
-        }
-        composable("leaderboardScreen/{username}/{score}") { backStackEntry ->
-            val username = backStackEntry.arguments?.getString("username") ?: "Player"
-            val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
-            LeaderboardScreen(navController, FirebaseFirestore.getInstance(), username, score)
-        }
-
-        composable("gameOverScreen/{username}/{score}") { backStackEntry ->
-            val username = backStackEntry.arguments?.getString("username") ?: "Player"
-            val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
-            GameOverScreen(navController, username, score, FirebaseFirestore.getInstance())
-        }
-    }
-}
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 
 @Composable
 fun GameScreen(navController: NavController, username: String, db: FirebaseFirestore) {
     var score by remember { mutableIntStateOf(0) }
-    var timeLeft by remember { mutableIntStateOf(30) } // 30-second gameplay
+    var timeLeft by remember { mutableIntStateOf(30) } // 5-second gameplay
     var highScore by remember { mutableIntStateOf(0) }
     var gameOver by remember { mutableStateOf(false) }
     var currentQuestion by remember { mutableStateOf(generateTrickQuestion()) }
@@ -118,7 +75,21 @@ fun GameScreen(navController: NavController, username: String, db: FirebaseFires
 
                 // Display Trick Question
                 Text(
-                    text = currentQuestion.question,
+                    text = buildAnnotatedString {
+                        val questionText = currentQuestion.question
+                        val colorText = questionText.substringAfter("**").substringBefore("**") // Extract color word
+                        val colorStartIndex = questionText.indexOf(colorText)
+
+                        append(questionText)
+
+                        if (colorStartIndex != -1) {
+                            addStyle(
+                                style = SpanStyle(color = currentQuestion.displayedColor),
+                                start = colorStartIndex,
+                                end = colorStartIndex + colorText.length
+                            )
+                        }
+                    },
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )

@@ -22,8 +22,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.trickytaps.ui.theme.TrickyTapsTheme
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,6 +35,48 @@ class MainActivity : ComponentActivity() {
             TrickyTapsTheme {
                 AppNavigation()
             }
+        }
+    }
+}
+
+@Composable
+fun AppNavigation() {
+    val navController = rememberNavController()
+
+    NavHost(navController, startDestination = "landingPage") {
+        composable("landingPage") {
+            MainScreen(navController)
+        }
+        composable("multiplayerModeSelection") {
+            MultiplayerModeSelectionScreen(navController)
+        }
+        composable("rotateScreen/{playerCount}") { backStackEntry ->
+            val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
+            RotateToLandscapeScreen(navController, playerCount)
+        }
+        composable("multiplayerScreen/{playerCount}") { backStackEntry ->
+            val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
+            MultiplayerScreen(playerCount, navController)
+        }
+        composable("authScreen") { AuthScreen(navController) }
+        composable("usernameScreen/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            UsernameScreen(navController, userId)
+        }
+        composable("gameScreen/{username}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "Player"
+            GameScreen(navController, username, FirebaseFirestore.getInstance())
+        }
+        composable("leaderboardScreen/{username}/{score}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "Player"
+            val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+            LeaderboardScreen(navController, FirebaseFirestore.getInstance(), username, score)
+        }
+
+        composable("gameOverScreen/{username}/{score}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "Player"
+            val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+            GameOverScreen(navController, username, score, FirebaseFirestore.getInstance())
         }
     }
 }
@@ -79,7 +124,9 @@ fun MultiplayerModeSelectionScreen(navController: NavController) {
     ) {
         // 🔙 Back Button (Top Left)
         Button(
-            onClick = { navController.popBackStack() },  // Navigate back to Main Menu
+            onClick = { navController.navigate("landingPage") {
+                popUpTo("landingPage") { inclusive = true } // Clears navigation history
+            } },  // Navigate back to Main Menu
             modifier = Modifier.align(Alignment.Start)
         ) {
             Text(text = "⬅ Back")

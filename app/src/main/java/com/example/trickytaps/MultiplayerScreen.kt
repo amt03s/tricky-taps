@@ -16,25 +16,31 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 
 class MultiplayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MultiplayerScreen(playerCount = 2)
+            val navController = rememberNavController()
+            MultiplayerScreen(playerCount = 2, navController= navController)
         }
     }
 }
 
 @Composable
-fun MultiplayerScreen(playerCount: Int) {
-    var timeLeft by remember { mutableIntStateOf(60) }
+fun MultiplayerScreen(playerCount: Int, navController: NavController) {
+    var timeLeft by remember { mutableIntStateOf(5) } // 5-second gameplay
     var gameOver by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
     val currentQuestion = remember { mutableStateOf(generateTrickQuestion()) }
     val playerScores = remember { mutableStateListOf(*IntArray(playerCount) { 0 }.toTypedArray()) }
+    var paused by remember { mutableStateOf(false) }
 
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
@@ -43,8 +49,8 @@ fun MultiplayerScreen(playerCount: Int) {
         isPaused = isPortrait
     }
 
-    LaunchedEffect(timeLeft) {
-        while (timeLeft > 0 && !isPaused) {
+    LaunchedEffect(timeLeft, paused) {
+        while (timeLeft > 0 && !isPaused && !paused && !gameOver) {
             delay(1000L)
             timeLeft--
         }
@@ -52,59 +58,101 @@ fun MultiplayerScreen(playerCount: Int) {
     }
 
     if (gameOver) {
-        MultiplayerGameOverScreen(playerScores)
+        MultiplayerGameOverScreen(playerScores, navController = navController, playerCount)
     } else {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            if (isPaused) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
+            ) {
+                if (isPaused) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Rotate your device back to Landscape to continue!",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            color = Color.Red
+                        )
+                    }
+                } else {
                     Text(
-                        text = "Rotate your device back to Landscape to continue!",
+                        text = "Time Left: $timeLeft",
                         fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        color = Color.Red
+                        fontWeight = FontWeight.Bold
                     )
-                }
-            } else {
-                Text(text = "Time Left: $timeLeft", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(text = currentQuestion.value.question, fontSize = 22.sp, textAlign = TextAlign.Center)
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = buildAnnotatedString {
+                            val questionText = currentQuestion.value.question
+                            val colorText = questionText.substringAfter("**").substringBefore("**") // Extracts the word to be colored
+                            val colorStartIndex = questionText.indexOf(colorText)
 
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    for (playerIndex in 0 until playerCount) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(text = "Player ${playerIndex + 1}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            append(questionText)
 
-                            val options = currentQuestion.value.options.chunked(2)
-                            options.forEach { rowOptions ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
-                                ) {
-                                    rowOptions.forEach { option ->
-                                        AnswerButton(option, playerIndex, currentQuestion, playerScores, isPortrait)
+                            if (colorStartIndex != -1) {
+                                addStyle(
+                                    style = SpanStyle(color = currentQuestion.value.displayedColor),
+                                    start = colorStartIndex,
+                                    end = colorStartIndex + colorText.length
+                                )
+                            }
+                        },
+                        fontSize = 22.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        for (playerIndex in 0 until playerCount) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Player ${playerIndex + 1}",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                val options = currentQuestion.value.options.chunked(2)
+                                options.forEach { rowOptions ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly
+                                    ) {
+                                        rowOptions.forEach { option ->
+                                            AnswerButton(
+                                                option,
+                                                playerIndex,
+                                                currentQuestion,
+                                                playerScores,
+                                                isPortrait
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
+            Button(
+                onClick = { paused = !paused },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                Text(if (paused) "Resume" else "Pause")
             }
         }
     }
@@ -132,7 +180,7 @@ fun AnswerButton(option: String, playerIndex: Int, currentQuestion: MutableState
 }
 
 @Composable
-fun MultiplayerGameOverScreen(scores: List<Int>) {
+fun MultiplayerGameOverScreen(scores: List<Int>, navController: NavController, playerCount: Int) {
     val winner = scores.indices.maxByOrNull { scores[it] } ?: 0
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -142,8 +190,16 @@ fun MultiplayerGameOverScreen(scores: List<Int>) {
         Text(text = "Game Over!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Text(text = "Winner: Player ${winner + 1} with ${scores[winner]} points!", fontSize = 24.sp)
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { /* Restart Game */ }) {
+        Button(onClick = { navController.navigate("rotateScreen/${playerCount}") }) {
             Text(text = "Play Again")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = {
+            navController.navigate("multiplayerModeSelection") {
+                popUpTo("landingPage") { inclusive = true } // Clears navigation history
+            }
+        }) {
+            Text(text = "Quit")
         }
     }
 }

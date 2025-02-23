@@ -48,6 +48,17 @@ fun AppNavigation() {
             val username = backStackEntry.arguments?.getString("username") ?: "Player"
             GameScreen(navController, username, FirebaseFirestore.getInstance())
         }
+        composable("leaderboardScreen/{username}/{score}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "Player"
+            val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+            LeaderboardScreen(navController, FirebaseFirestore.getInstance(), username, score)
+        }
+
+        composable("gameOverScreen/{username}/{score}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "Player"
+            val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+            GameOverScreen(navController, username, score, FirebaseFirestore.getInstance())
+        }
     }
 }
 
@@ -87,7 +98,7 @@ fun GameScreen(navController: NavController, username: String, db: FirebaseFires
     }
 
     if (gameOver) {
-        GameOverScreen(score, navController, username, db)
+        GameOverScreen(score = score, navController = navController, username = username, db = db)
     } else {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -148,7 +159,7 @@ fun GameScreen(navController: NavController, username: String, db: FirebaseFires
 }
 
 @Composable
-fun GameOverScreen(score: Int, navController: NavController, username: String, db: FirebaseFirestore) {
+fun GameOverScreen(navController: NavController, username: String, score: Int, db: FirebaseFirestore) {
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid
 
@@ -189,9 +200,16 @@ fun GameOverScreen(score: Int, navController: NavController, username: String, d
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            // ✅ Clear all previous screens before navigating to the login screen
+            navController.navigate("leaderboardScreen/$username/$score") // Navigate to Leaderboard with username & score
+        }) {
+            Text(text = "Show Leaderboard")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
             navController.navigate("authScreen") {
-                popUpTo("landingPage") { inclusive = true } // Clears previous screens from the stack
+                popUpTo("landingPage") { inclusive = true } // Clears navigation history
             }
         }) {
             Text(text = "Quit")
@@ -232,3 +250,62 @@ fun RotateToLandscapeScreen(navController: NavController, playerCount: Int) {
         )
     }
 }
+
+@Composable
+fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, username: String, score: Int) {
+    var leaderboard by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    // Fetch leaderboard data from Firestore
+    LaunchedEffect(Unit) {
+        db.collection("users")
+            .orderBy("highScore", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { result ->
+                val users = result.documents.mapNotNull { doc ->
+                    val user = doc.getString("username") ?: "Unknown"
+                    val highScore = doc.getLong("highScore")?.toInt() ?: 0
+                    user to highScore
+                }
+                leaderboard = users
+                isLoading = false
+            }
+            .addOnFailureListener {
+                isLoading = false
+            }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        Text(text = "Leaderboard", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(20.dp))
+
+        if (isLoading) {
+            CircularProgressIndicator()
+        } else {
+            leaderboard.forEachIndexed { index, (user, highScore) ->
+                Text(
+                    text = "${index + 1}. $user - $highScore points",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(onClick = {
+            navController.navigate("gameOverScreen/$username/$score") {
+                popUpTo("leaderboardScreen") { inclusive = true } // Clears only the leaderboard screen
+            }
+        }) {
+            Text(text = "⬅ Back")
+        }
+    }
+}
+
+

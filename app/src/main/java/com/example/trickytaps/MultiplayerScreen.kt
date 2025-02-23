@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
@@ -28,19 +29,23 @@ class MultiplayerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
-            MultiplayerScreen(playerCount = 2, navController= navController)
+            val viewModel: MultiplayerViewModel = viewModel()
+
+            MultiplayerScreen(navController = navController, viewModel = viewModel)
         }
     }
 }
 
 @Composable
-fun MultiplayerScreen(playerCount: Int, navController: NavController) {
+fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewModel) {
+    val playerNames by viewModel.playerNames.collectAsState()
+    val scores by viewModel.scores.collectAsState()
+    val playerCount by viewModel.playerCount.collectAsState() // Retrieve player count correctly
+
     var timeLeft by remember { mutableIntStateOf(5) } // 5-second gameplay
     var gameOver by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
     val currentQuestion = remember { mutableStateOf(generateTrickQuestion()) }
-    val playerScores = remember { mutableStateListOf(*IntArray(playerCount) { 0 }.toTypedArray()) }
-    var paused by remember { mutableStateOf(false) }
 
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
@@ -49,8 +54,8 @@ fun MultiplayerScreen(playerCount: Int, navController: NavController) {
         isPaused = isPortrait
     }
 
-    LaunchedEffect(timeLeft, paused) {
-        while (timeLeft > 0 && !isPaused && !paused && !gameOver) {
+    LaunchedEffect(timeLeft, isPaused) {
+        while (timeLeft > 0 && !isPaused && !gameOver) {
             delay(1000L)
             timeLeft--
         }
@@ -58,7 +63,8 @@ fun MultiplayerScreen(playerCount: Int, navController: NavController) {
     }
 
     if (gameOver) {
-        MultiplayerGameOverScreen(playerScores, navController = navController, playerCount)
+        // ✅ Pass the correct parameters to MultiplayerGameOverScreen
+        MultiplayerGameOverScreen(scores, playerNames, navController, playerCount, viewModel)
     } else {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -86,10 +92,11 @@ fun MultiplayerScreen(playerCount: Int, navController: NavController) {
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(16.dp))
+
                     Text(
                         text = buildAnnotatedString {
                             val questionText = currentQuestion.value.question
-                            val colorText = questionText.substringAfter("**").substringBefore("**") // Extracts the word to be colored
+                            val colorText = questionText.substringAfter("*").substringBefore("*") // Extracts the word to be colored
                             val colorStartIndex = questionText.indexOf(colorText)
 
                             append(questionText)
@@ -112,13 +119,13 @@ fun MultiplayerScreen(playerCount: Int, navController: NavController) {
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        for (playerIndex in 0 until playerCount) {
+                        playerNames.forEachIndexed { index, playerName ->
                             Column(
                                 modifier = Modifier.weight(1f),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "Player ${playerIndex + 1}",
+                                    text = playerName,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -133,9 +140,9 @@ fun MultiplayerScreen(playerCount: Int, navController: NavController) {
                                         rowOptions.forEach { option ->
                                             AnswerButton(
                                                 option,
-                                                playerIndex,
+                                                index,
                                                 currentQuestion,
-                                                playerScores,
+                                                viewModel,
                                                 isPortrait
                                             )
                                         }
@@ -146,29 +153,40 @@ fun MultiplayerScreen(playerCount: Int, navController: NavController) {
                     }
                 }
             }
+
             Button(
-                onClick = { paused = !paused },
+                onClick = { isPaused = !isPaused },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(8.dp)
             ) {
-                Text(if (paused) "Resume" else "Pause")
+                Text(if (isPaused) "Resume" else "Pause")
             }
         }
     }
 }
 
 @Composable
-fun AnswerButton(option: String, playerIndex: Int, currentQuestion: MutableState<TrickQuestion>, playerScores: MutableList<Int>, isPortrait: Boolean) {
+fun AnswerButton(
+    option: String,
+    playerIndex: Int,
+    currentQuestion: MutableState<TrickQuestion>,
+    viewModel: MultiplayerViewModel,
+    isPortrait: Boolean
+) {
+    // Get player name safely
+    val playerNames = viewModel.playerNames.collectAsState().value
+    val playerName = playerNames.getOrNull(playerIndex) ?: "Unknown Player" // Avoid crashes
+
     Box(
         modifier = Modifier
             .width(if (isPortrait) 250.dp else 160.dp)
-            .height(60.dp) // Ensuring equal height and appropriate width
+            .height(60.dp)
             .padding(4.dp)
             .background(Color.Gray, shape = RoundedCornerShape(8.dp))
             .clickable {
                 if (option == currentQuestion.value.correctAnswer) {
-                    playerScores[playerIndex] += 10 // Update specific player score
+                    viewModel.updateScore(playerName)
                 }
                 currentQuestion.value = generateTrickQuestion() // Load new question
             }
@@ -180,26 +198,65 @@ fun AnswerButton(option: String, playerIndex: Int, currentQuestion: MutableState
 }
 
 @Composable
-fun MultiplayerGameOverScreen(scores: List<Int>, navController: NavController, playerCount: Int) {
-    val winner = scores.indices.maxByOrNull { scores[it] } ?: 0
+fun MultiplayerGameOverScreen(
+    scores: Map<String, Int>,
+    playerNames: List<String>,
+    navController: NavController,
+    playerCount: Int,
+    viewModel: MultiplayerViewModel
+) {
+    val maxScore = scores.values.maxOrNull() ?: 0
+    val winners = scores.filter { it.value == maxScore }.keys
+
+    // ✅ Update only once per game end
+    LaunchedEffect(Unit) {
+        viewModel.updateWinCount()
+    }
+
+    val winCounts by viewModel.winCounts.collectAsState() // Get updated win counts
+
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(text = "Game Over!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Text(text = "Winner: Player ${winner + 1} with ${scores[winner]} points!", fontSize = 24.sp)
+
+        if (winners.size == 1) {
+            Text(text = "Winner: ${winners.first()} with $maxScore points!", fontSize = 24.sp)
+        } else {
+            Text(text = "It's a tie between ${winners.joinToString(", ")} with $maxScore points!", fontSize = 24.sp)
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { navController.navigate("rotateScreen/${playerCount}") }) {
+
+        // ✅ Display Games Won Leaderboard
+        Text(text = "🏆 Games Won:", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        winCounts.forEach { (player, wins) ->
+            Text(text = "$player: $wins wins", fontSize = 20.sp)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
+            viewModel.resetScores() // Reset round scores, not win count
+            navController.navigate("rotateScreen/$playerCount")
+        }) {
             Text(text = "Play Again")
         }
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Button(onClick = {
             navController.navigate("multiplayerModeSelection") {
-                popUpTo("landingPage") { inclusive = true } // Clears navigation history
+                popUpTo("landingPage") { inclusive = true }
             }
         }) {
             Text(text = "Quit")
         }
     }
 }
+
+
+
+

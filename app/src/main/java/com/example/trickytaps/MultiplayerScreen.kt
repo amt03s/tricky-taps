@@ -63,7 +63,6 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
     }
 
     if (gameOver) {
-        // ✅ Pass the correct parameters to MultiplayerGameOverScreen
         MultiplayerGameOverScreen(scores, playerNames, navController, playerCount, viewModel)
     } else {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -96,7 +95,7 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
                     Text(
                         text = buildAnnotatedString {
                             val questionText = currentQuestion.value.question
-                            val colorText = questionText.substringAfter("*").substringBefore("*") // Extracts the word to be colored
+                            val colorText = questionText.substringAfter("**").substringBefore("**") // Extracts the word to be colored
                             val colorStartIndex = questionText.indexOf(colorText)
 
                             append(questionText)
@@ -112,6 +111,7 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
                         fontSize = 22.sp,
                         textAlign = TextAlign.Center,
                     )
+
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Row(
@@ -208,7 +208,6 @@ fun MultiplayerGameOverScreen(
     val maxScore = scores.values.maxOrNull() ?: 0
     val winners = scores.filter { it.value == maxScore }.keys
 
-    // ✅ Update only once per game end
     LaunchedEffect(Unit) {
         viewModel.updateWinCount()
     }

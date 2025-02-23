@@ -15,7 +15,8 @@ fun generateTrickQuestion(): TrickQuestion {
         "Select the **odd** number",
         "Tap the **largest** shape",
         "Which one is **not** a fruit?",
-        "Pick the word spelled **incorrectly**"
+        "Pick the word spelled **incorrectly**",
+        "Choose the **color**"
     )
 
     val randomQuestion = questions.random()
@@ -42,6 +43,29 @@ fun generateTrickQuestion(): TrickQuestion {
                 options = colorNames.shuffled(),
                 correctAnswer = textColor, // The correct answer is the actual color
                 displayedColor = colorMap[textColor]!! // Get the actual color value
+            )
+        }
+        "Choose the **color**" -> {
+            val colorNames = listOf("Red", "Blue", "Green", "Yellow")
+            val colorMap = mapOf(
+                "Red" to Color.Red,
+                "Blue" to Color.Blue,
+                "Green" to Color.Green,
+                "Yellow" to Color.Yellow
+            )
+
+            val displayedWord = colorNames.random() // The misleading word (e.g., "Green")
+            var displayedColorName: String
+
+            do {
+                displayedColorName = colorNames.random() // The actual displayed color (e.g., Yellow)
+            } while (displayedColorName == displayedWord) // Ensure they are different
+
+            TrickQuestion(
+                question = "Choose the color **$displayedWord**",
+                options = colorNames.shuffled(),
+                correctAnswer = displayedWord, // Correct answer is the displayed word (not the color)
+                displayedColor = colorMap[displayedColorName]!! // The actual color applied to text
             )
         }
         "Select the **odd** number" -> {

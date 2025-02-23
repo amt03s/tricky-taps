@@ -188,7 +188,12 @@ fun GameOverScreen(score: Int, navController: NavController, username: String, d
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { navController.navigate("authScreen") }) {
+        Button(onClick = {
+            // ✅ Clear all previous screens before navigating to the login screen
+            navController.navigate("authScreen") {
+                popUpTo("landingPage") { inclusive = true } // Clears previous screens from the stack
+            }
+        }) {
             Text(text = "Quit")
         }
     }

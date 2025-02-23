@@ -5,12 +5,17 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -75,15 +80,26 @@ fun AuthScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        var passwordVisible by remember { mutableStateOf(false) }
+
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth(0.85f),
-            maxLines = 1
+            maxLines = 1,
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = if (passwordVisible) "Hide Password" else "Show Password"
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth(0.85f)
         )
+
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -113,21 +129,22 @@ fun AuthScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(20.dp))
 
         // Google Sign-In Button
-        Button(
-            onClick = {
-                val googleSignInClient = getGoogleSignInClient(context)
+        if (isLogin) {
+            Button(
+                onClick = {
+                    val googleSignInClient = getGoogleSignInClient(context)
 
-                // ✅ Sign out first to force account selection
-                googleSignInClient.signOut().addOnCompleteListener {
-                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
-                }
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-            modifier = Modifier.fillMaxWidth(0.6f)
-        ) {
-            Text(text = "Sign in with Google")
+                    // Sign out first to force account selection
+                    googleSignInClient.signOut().addOnCompleteListener {
+                        googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                modifier = Modifier.fillMaxWidth(0.6f)
+            ) {
+                Text(text = "Sign in with Google")
+            }
         }
-
     }
 }
 
@@ -140,14 +157,14 @@ fun signUpUser(email: String, password: String, navController: NavController, co
             if (task.isSuccessful) {
                 val userId = auth.currentUser!!.uid
 
-                // 🚀 Store email in Firestore before asking for a username
+                // Store email in Firestore before asking for a username
                 val newUser = mapOf(
                     "email" to email,
                     "highScore" to 0 // Default high score
                 )
 
                 db.collection("users").document(userId)
-                    .set(newUser) // ✅ Store email before username setup
+                    .set(newUser) // Store email before username setup
                     .addOnSuccessListener {
                         navController.navigate("usernameScreen/$userId")
                     }

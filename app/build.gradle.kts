@@ -68,5 +68,5 @@ dependencies {
 
     implementation (libs.firebase.auth.ktx.v2210)
     implementation (libs.firebase.firestore.ktx.v2491)
-    implementation (libs.play.services.auth)
+    implementation ("com.google.android.gms:play-services-auth:21.3.0")
 }

@@ -66,15 +66,25 @@ fun AuthScreen(navController: NavController) {
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email") }
+            label = { Text("Email") },
+            singleLine = true, // Prevents multi-line expansion
+            modifier = Modifier
+                .fillMaxWidth(0.85f), // Limits width to 85% of the screen
+            maxLines = 1
         )
+
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") }
+            label = { Text("Password") },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth(0.85f),
+            maxLines = 1
         )
+
         Spacer(modifier = Modifier.height(20.dp))
 
         Button(

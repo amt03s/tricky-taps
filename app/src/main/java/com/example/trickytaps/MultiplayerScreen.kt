@@ -30,7 +30,7 @@ class MultiplayerActivity : ComponentActivity() {
 
 @Composable
 fun MultiplayerScreen(playerCount: Int) {
-    var timeLeft by remember { mutableStateOf(60) }
+    var timeLeft by remember { mutableIntStateOf(60) }
     var gameOver by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
     val currentQuestion = remember { mutableStateOf(generateTrickQuestion()) }

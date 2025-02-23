@@ -16,6 +16,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 
 @Composable
@@ -26,7 +28,6 @@ fun AppNavigation() {
         composable("landingPage") {
             MainScreen(navController)
         }
-        composable("gameScreen") { GameScreen(navController) }
         composable("multiplayerModeSelection") {
             MultiplayerModeSelectionScreen(navController)
         }
@@ -38,16 +39,43 @@ fun AppNavigation() {
             val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
             MultiplayerScreen(playerCount)
         }
+        composable("authScreen") { AuthScreen(navController) }
+        composable("usernameScreen/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            UsernameScreen(navController, userId)
+        }
+        composable("gameScreen/{username}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: "Player"
+            GameScreen(navController, username, FirebaseFirestore.getInstance())
+        }
     }
 }
 
 @Composable
-fun GameScreen(navController: NavController) {
+fun GameScreen(navController: NavController, username: String, db: FirebaseFirestore) {
     var score by remember { mutableIntStateOf(0) }
-    var timeLeft by remember { mutableStateOf(30) } // 30-second gameplay
+    var timeLeft by remember { mutableIntStateOf(30) } // 30-second gameplay
+    var highScore by remember { mutableIntStateOf(0) }
+    var gameOver by remember { mutableStateOf(false) }
     var currentQuestion by remember { mutableStateOf(generateTrickQuestion()) }
     var paused by remember { mutableStateOf(false) }
-    var gameOver by remember { mutableStateOf(false) }
+
+    val auth = FirebaseAuth.getInstance()
+    val userId = auth.currentUser?.uid
+
+    // Retrieve User's High Score from Firestore
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            db.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener { document ->
+                    highScore = document.getLong("highScore")?.toInt() ?: 0
+                }
+                .addOnFailureListener {
+                    println("Failed to load high score")
+                }
+        }
+    }
 
     // Countdown Timer (Only runs if not paused)
     LaunchedEffect(timeLeft, paused) {
@@ -59,12 +87,7 @@ fun GameScreen(navController: NavController) {
     }
 
     if (gameOver) {
-        GameOverScreen(score, navController) {
-            score = 0
-            timeLeft = 30
-            gameOver = false
-            currentQuestion = generateTrickQuestion()
-        }
+        GameOverScreen(score, navController, username, db)
     } else {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -72,8 +95,13 @@ fun GameScreen(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                Text(text = "Player: $username", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Blue)
+                Text(text = "High Score: $highScore", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Green)
+                Spacer(modifier = Modifier.height(12.dp))
+
                 Text(text = "Time Left: $timeLeft", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
+
                 Text(text = "Score: $score", fontSize = 20.sp)
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -119,9 +147,32 @@ fun GameScreen(navController: NavController) {
     }
 }
 
-// Game Over Screen
 @Composable
-fun GameOverScreen(score: Int, navController: NavController, onRestart: () -> Unit) {
+fun GameOverScreen(score: Int, navController: NavController, username: String, db: FirebaseFirestore) {
+    val auth = FirebaseAuth.getInstance()
+    val userId = auth.currentUser?.uid
+
+    // Update High Score in Firestore
+    LaunchedEffect(score) {
+        if (userId != null) {
+            db.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener { document ->
+                    val currentHighScore = document.getLong("highScore") ?: 0
+                    if (score > currentHighScore) {
+                        db.collection("users").document(userId)
+                            .update("highScore", score)
+                            .addOnSuccessListener {
+                                println("High score updated to $score")
+                            }
+                            .addOnFailureListener { e ->
+                                println("Error updating high score: $e")
+                            }
+                    }
+                }
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -131,17 +182,13 @@ fun GameOverScreen(score: Int, navController: NavController, onRestart: () -> Un
         Text(text = "Final Score: $score", fontSize = 24.sp)
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { onRestart() }) {
+        Button(onClick = { navController.navigate("gameScreen/$username") }) {
             Text(text = "Play Again")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {
-            navController.navigate("mainScreen") {
-                popUpTo("mainScreen") { inclusive = true } // Clears previous screens
-            }
-        }) {
+        Button(onClick = { navController.navigate("authScreen") }) {
             Text(text = "Quit")
         }
     }
@@ -180,4 +227,3 @@ fun RotateToLandscapeScreen(navController: NavController, playerCount: Int) {
         )
     }
 }
-

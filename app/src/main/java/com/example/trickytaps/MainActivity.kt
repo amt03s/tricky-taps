@@ -49,7 +49,7 @@ fun MainScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(20.dp))
 
         Button(
-            onClick = { navController.navigate("gameScreen") },
+            onClick = { navController.navigate("authScreen") },
             colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
             modifier = Modifier.fillMaxWidth(0.6f)
         ) {
@@ -77,6 +77,16 @@ fun MultiplayerModeSelectionScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // 🔙 Back Button (Top Left)
+        Button(
+            onClick = { navController.popBackStack() },  // Navigate back to Main Menu
+            modifier = Modifier.align(Alignment.Start)
+        ) {
+            Text(text = "⬅ Back")
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
         Text(text = "Choose Multiplayer Mode", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(20.dp))
 

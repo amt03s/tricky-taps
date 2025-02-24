@@ -3,6 +3,9 @@ package com.example.trickytaps
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -155,35 +158,37 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = "Game Over!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Text(text = "Final Score: $score", fontSize = 24.sp)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = { navController.navigate("gameScreen/$username") }) {
-            Text(text = "Play Again")
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        IconButton(
+            onClick = {
+                navController.navigate("authScreen") {
+                    popUpTo("landingPage") { inclusive = true }
+                }
+            },
+            modifier = Modifier.align(Alignment.TopEnd)
+        ) {
+            Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Back")
         }
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = "Game Over!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            Text(text = "Final Score: $score", fontSize = 24.sp)
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            navController.navigate("leaderboardScreen/$username/$score") // Navigate to Leaderboard with username & score
-        }) {
-            Text(text = "Show Leaderboard")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            navController.navigate("authScreen") {
-                popUpTo("landingPage") { inclusive = true } // Clears navigation history
+            Button(onClick = { navController.navigate("gameScreen/$username") }) {
+                Text(text = "Play Again")
             }
-        }) {
-            Text(text = "Quit")
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(onClick = {
+                navController.navigate("leaderboardScreen/$username/$score") // Navigate to Leaderboard with username & score
+            }) {
+                Text(text = "Show Leaderboard")
+            }
         }
     }
 }
@@ -246,35 +251,39 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
             }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ) {
-        Text(text = "Leaderboard", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(20.dp))
-
-        if (isLoading) {
-            CircularProgressIndicator()
-        } else {
-            leaderboard.forEachIndexed { index, (user, highScore) ->
-                Text(
-                    text = "${index + 1}. $user - $highScore points",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        IconButton(
+            onClick = {
+                navController.navigate("gameOverScreen/$username/$score") {
+                    popUpTo("leaderboardScreen") { inclusive = true }
+                }
+            },
+            modifier = Modifier.align(Alignment.TopStart)
+        ) {
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
         }
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Text(text = "Leaderboard", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(20.dp))
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(onClick = {
-            navController.navigate("gameOverScreen/$username/$score") {
-                popUpTo("leaderboardScreen") { inclusive = true } // Clears only the leaderboard screen
+            if (isLoading) {
+                CircularProgressIndicator()
+            } else {
+                leaderboard.forEachIndexed { index, (user, highScore) ->
+                    Text(
+                        text = "${index + 1}. $user - $highScore points",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
-        }) {
-            Text(text = "⬅ Back")
+
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }

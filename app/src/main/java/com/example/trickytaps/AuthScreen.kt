@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -46,103 +47,118 @@ fun AuthScreen(navController: NavController) {
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // 🔙 Back Button (Now properly navigates to the main menu)
-        Button(
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        // Back Button (Aligned to Top Start)
+        IconButton(
             onClick = {
-                navController.navigate("landingPage") {
-                    popUpTo("authScreen") { inclusive = true } // Clears previous navigation history
+                if (!isLogin) {
+                    isLogin = true // Reset to login mode if in sign-up mode
+                }
+                else if (isLogin){
+                    navController.navigate("landingPage")
+                }
+                else {
+                    navController.popBackStack() // Go back only if already in login mode
                 }
             },
-            modifier = Modifier.align(Alignment.Start)
+            modifier = Modifier.align(Alignment.TopStart)
         ) {
-            Text(text = "⬅ Back")
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(text = if (isLogin) "Login" else "Sign Up", fontSize = 24.sp)
-        Spacer(modifier = Modifier.height(20.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            singleLine = true, // Prevents multi-line expansion
-            modifier = Modifier
-                .fillMaxWidth(0.85f), // Limits width to 85% of the screen
-            maxLines = 1
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        var passwordVisible by remember { mutableStateOf(false) }
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            singleLine = true,
-            maxLines = 1,
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(
-                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = if (passwordVisible) "Hide Password" else "Show Password"
-                    )
-                }
-            },
-            modifier = Modifier.fillMaxWidth(0.85f)
-        )
-
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(
-            onClick = {
-                if (email.isNotBlank() && password.isNotBlank()) {
-                    if (isLogin) {
-                        loginUser(email, password, navController, context)
-                    } else {
-                        signUpUser(email, password, navController, context)
-                    }
-                } else {
-                    Toast.makeText(context, "Email and password cannot be empty", Toast.LENGTH_SHORT).show()
-                }
-            },
-            modifier = Modifier.fillMaxWidth(0.6f)
-        ) {
-            Text(text = if (isLogin) "Login" else "Sign Up")
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        TextButton(onClick = { isLogin = !isLogin }) {
-            Text(text = if (isLogin) "Create an account" else "Already have an account? Log in")
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Google Sign-In Button
-        if (isLogin) {
-            Button(
-                onClick = {
-                    val googleSignInClient = getGoogleSignInClient(context)
-
-                    // Sign out first to force account selection
-                    googleSignInClient.signOut().addOnCompleteListener {
-                        googleSignInLauncher.launch(googleSignInClient.signInIntent)
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                modifier = Modifier.fillMaxWidth(0.6f)
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Text(text = "Sign in with Google")
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(text = if (isLogin) "Login" else "Sign Up", fontSize = 24.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    singleLine = true, // Prevents multi-line expansion
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f), // Limits width to 85% of the screen
+                    maxLines = 1
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                var passwordVisible by remember { mutableStateOf(false) }
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    singleLine = true,
+                    maxLines = 1,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (passwordVisible) "Hide Password" else "Show Password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(0.85f)
+                )
+
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Button(
+                    onClick = {
+                        if (email.isNotBlank() && password.isNotBlank()) {
+                            if (isLogin) {
+                                loginUser(email, password, navController, context)
+                            } else {
+                                signUpUser(email, password, navController, context)
+                            }
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Email and password cannot be empty",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(0.6f)
+                ) {
+                    Text(text = if (isLogin) "Login" else "Sign Up")
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                // Google Sign-In Button
+                if (isLogin) {
+                    Button(
+                        onClick = {
+                            val googleSignInClient = getGoogleSignInClient(context)
+
+                            // Sign out first to force account selection
+                            googleSignInClient.signOut().addOnCompleteListener {
+                                googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                        modifier = Modifier.fillMaxWidth(0.6f)
+                    ) {
+                        Text(text = "Continue with Google")
+                    }
+                }
+            }
+
+            TextButton(
+                onClick = { isLogin = !isLogin },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 20.dp) // Optional padding
+            ) {
+                Text(text = if (isLogin) "Create an account" else "Already have an account? Log in")
             }
         }
     }

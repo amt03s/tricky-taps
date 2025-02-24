@@ -16,7 +16,21 @@ fun generateTrickQuestion(): TrickQuestion {
         "Tap the **largest** shape",
         "Which one is **not** a fruit?",
         "Pick the word spelled **incorrectly**",
-        "Choose the **color**"
+        "Choose the **color**",
+        "Which shape has more sides?",
+        "What is 2 + 2? (Trick question)",
+        "Which one is heavier?",
+        "Pick the word that is a palindrome",
+        "Which glass has more water?",
+        "Tap the fastest animal",
+        "Which letter comes next? (A, C, E, ?)",
+        "Choose the correct spelling",
+        "Which number is missing? (1, 3, 5, ?)",
+        "Which is the coldest place?",
+        "Select the word that is an antonym of 'hot'",
+        "Pick the odd one out",
+        "Find the hidden number",
+        "Tap the longest word",
     )
 
     val randomQuestion = questions.random()
@@ -31,18 +45,18 @@ fun generateTrickQuestion(): TrickQuestion {
                 "Yellow" to Color.Yellow
             )
 
-            val textWord = colorNames.random() // This is the displayed word
+            val textWord = colorNames.random()
             var textColor: String
 
             do {
-                textColor = colorNames.random() // This is the actual text color
-            } while (textColor == textWord) // Ensure they are different
+                textColor = colorNames.random()
+            } while (textColor == textWord)
 
             TrickQuestion(
                 question = "Choose the color of the text: **$textWord**",
                 options = colorNames.shuffled(),
-                correctAnswer = textColor, // The correct answer is the actual color
-                displayedColor = colorMap[textColor]!! // Get the actual color value
+                correctAnswer = textColor,
+                displayedColor = colorMap[textColor]!!
             )
         }
         "Choose the **color**" -> {
@@ -54,18 +68,18 @@ fun generateTrickQuestion(): TrickQuestion {
                 "Yellow" to Color.Yellow
             )
 
-            val displayedWord = colorNames.random() // The misleading word (e.g., "Green")
+            val displayedWord = colorNames.random()
             var displayedColorName: String
 
             do {
-                displayedColorName = colorNames.random() // The actual displayed color (e.g., Yellow)
-            } while (displayedColorName == displayedWord) // Ensure they are different
+                displayedColorName = colorNames.random()
+            } while (displayedColorName == displayedWord)
 
             TrickQuestion(
                 question = "Choose the color **$displayedWord**",
                 options = colorNames.shuffled(),
-                correctAnswer = displayedWord, // Correct answer is the displayed word (not the color)
-                displayedColor = colorMap[displayedColorName]!! // The actual color applied to text
+                correctAnswer = displayedWord,
+                displayedColor = colorMap[displayedColorName]!!
             )
         }
         "Select the **odd** number" -> {
@@ -83,6 +97,62 @@ fun generateTrickQuestion(): TrickQuestion {
         "Pick the word spelled **incorrectly**" -> {
             val words = listOf("Recieve", "Receive", "Accomodate", "Accommodate")
             TrickQuestion(randomQuestion, words, "Recieve", Color.Black)
+        }
+        "Which shape has more sides?" -> {
+            val shapes = listOf("Square", "Triangle", "Pentagon", "Hexagon")
+            TrickQuestion(randomQuestion, shapes, "Hexagon", Color.Black)
+        }
+        "What is 2 + 2? (Trick question)" -> {
+            val answers = listOf("4", "Fish", "22", "5")
+            TrickQuestion(randomQuestion, answers, "Fish", Color.Black)
+        }
+        "Which one is heavier?" -> {
+            val weights = listOf("1 kg of feathers", "1 kg of bricks", "10 kg of paper", "5 kg of steel")
+            TrickQuestion(randomQuestion, weights, "10 kg of paper", Color.Black)
+        }
+        "Pick the word that is a palindrome" -> {
+            val words = listOf("Racecar", "Table", "Laptop", "Mirror")
+            TrickQuestion(randomQuestion, words, "Racecar", Color.Black)
+        }
+        "Which glass has more water?" -> {
+            val options = listOf("Tall Glass", "Wide Glass", "Same", "Short Glass")
+            TrickQuestion(randomQuestion, options, "Same", Color.Black)
+        }
+        "Tap the fastest animal" -> {
+            val options = listOf("Cheetah", "Falcon", "Horse", "Rabbit")
+            TrickQuestion(randomQuestion, options, "Falcon", Color.Black)
+        }
+        "Which letter comes next? (A, C, E, ?)" -> {
+            val options = listOf("F", "G", "H", "I")
+            TrickQuestion(randomQuestion, options, "G", Color.Black)
+        }
+        "Choose the correct spelling" -> {
+            val options = listOf("Definately", "Definitely", "Defanitely", "Defenitely")
+            TrickQuestion(randomQuestion, options, "Definitely", Color.Black)
+        }
+        "Which number is missing? (1, 3, 5, ?)" -> {
+            val options = listOf("6", "7", "8", "9")
+            TrickQuestion(randomQuestion, options, "7", Color.Black)
+        }
+        "Which is the coldest place?" -> {
+            val options = listOf("Antarctica", "Siberia", "Iceland", "Alaska")
+            TrickQuestion(randomQuestion, options, "Antarctica", Color.Black)
+        }
+        "Select the word that is an antonym of 'hot'" -> {
+            val options = listOf("Cold", "Warm", "Freezing", "Chilly")
+            TrickQuestion(randomQuestion, options, "Cold", Color.Black)
+        }
+        "Pick the odd one out" -> {
+            val options = listOf("Dog", "Cat", "Fish", "Cow")
+            TrickQuestion(randomQuestion, options, "Fish", Color.Black)
+        }
+        "Find the hidden number" -> {
+            val options = listOf("5", "7", "9", "11")
+            TrickQuestion(randomQuestion, options, "7", Color.Black)
+        }
+        "Tap the longest word" -> {
+            val options = listOf("Elephant", "Hippopotamus", "Butterfly", "Giraffe")
+            TrickQuestion(randomQuestion, options, "Hippopotamus", Color.Black)
         }
         else -> TrickQuestion("Error loading question", listOf("N/A"), "N/A", Color.Black)
     }

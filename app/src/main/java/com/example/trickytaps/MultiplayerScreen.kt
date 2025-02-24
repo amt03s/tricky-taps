@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -214,44 +216,49 @@ fun MultiplayerGameOverScreen(
 
     val winCounts by viewModel.winCounts.collectAsState() // Get updated win counts
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = "Game Over!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-
-        if (winners.size == 1) {
-            Text(text = "Winner: ${winners.first()} with $maxScore points!", fontSize = 24.sp)
-        } else {
-            Text(text = "It's a tie between ${winners.joinToString(", ")} with $maxScore points!", fontSize = 24.sp)
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        IconButton(
+            onClick = {
+                navController.navigate("multiplayerModeSelection") {
+                    popUpTo("landingPage") { inclusive = true }
+                }
+            },
+            modifier = Modifier.align(Alignment.TopEnd)
+        ) {
+            Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Back")
         }
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = "Game Over!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // ✅ Display Games Won Leaderboard
-        Text(text = "🏆 Games Won:", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        winCounts.forEach { (player, wins) ->
-            Text(text = "$player: $wins wins", fontSize = 20.sp)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            viewModel.resetScores() // Reset round scores, not win count
-            navController.navigate("rotateScreen/$playerCount")
-        }) {
-            Text(text = "Play Again")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            navController.navigate("multiplayerModeSelection") {
-                popUpTo("landingPage") { inclusive = true }
+            if (winners.size == 1) {
+                Text(text = "Winner: ${winners.first()} with $maxScore points!", fontSize = 24.sp)
+            } else {
+                Text(
+                    text = "It's a tie between ${winners.joinToString(", ")} with $maxScore points!",
+                    fontSize = 24.sp
+                )
             }
-        }) {
-            Text(text = "Quit")
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ✅ Display Games Won Leaderboard
+            Text(text = "🏆 Games Won:", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            winCounts.forEach { (player, wins) ->
+                Text(text = "$player: $wins wins", fontSize = 20.sp)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(onClick = {
+                viewModel.resetScores() // Reset round scores, not win count
+                navController.navigate("rotateScreen/$playerCount")
+            }) {
+                Text(text = "Play Again")
+            }
         }
     }
 }

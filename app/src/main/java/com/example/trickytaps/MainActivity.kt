@@ -162,23 +162,32 @@ fun MultiplayerModeSelectionScreen(navController: NavController, viewModel: Mult
 
             OutlinedTextField(
                 value = player1,
-                onValueChange = { player1 = it },
-                label = { Text("Player 1 Name") }
+                onValueChange = { if (it.length <= 12) player1 = it }, // Limits input to 12 characters
+                label = { Text("Player 1 Name") },
+                singleLine = true, // Ensures a single-line input
+                maxLines = 1, // Prevents multi-line expansion
+                modifier = Modifier.fillMaxWidth(0.85f)
             )
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = player2,
-                onValueChange = { player2 = it },
-                label = { Text("Player 2 Name") }
+                onValueChange = { if (it.length <= 12) player2 = it },
+                label = { Text("Player 2 Name") },
+                singleLine = true,
+                maxLines = 1,
+                modifier = Modifier.fillMaxWidth(0.85f)
             )
             Spacer(modifier = Modifier.height(12.dp))
 
             if (playerCount == 3) {
                 OutlinedTextField(
                     value = player3,
-                    onValueChange = { player3 = it },
-                    label = { Text("Player 3 Name") }
+                    onValueChange = { if (it.length <= 12) player3 = it },
+                    label = { Text("Player 3 Name") },
+                    singleLine = true,
+                    maxLines = 1,
+                    modifier = Modifier.fillMaxWidth(0.85f)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }

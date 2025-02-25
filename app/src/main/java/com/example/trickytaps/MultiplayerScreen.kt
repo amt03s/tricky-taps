@@ -246,7 +246,7 @@ fun MultiplayerGameOverScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ✅ Display Games Won Leaderboard
+            // Display Games Won Leaderboard
             Text(text = "🏆 Games Won:", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             winCounts.forEach { (player, wins) ->
                 Text(text = "$player: $wins wins", fontSize = 20.sp)

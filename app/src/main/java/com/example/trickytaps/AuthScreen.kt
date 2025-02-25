@@ -229,84 +229,67 @@ fun UsernameScreen(navController: NavController, userId: String) {
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
     var username by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = "Choose a Username", fontSize = 24.sp)
-        Spacer(modifier = Modifier.height(20.dp))
-
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Username") },
-            isError = errorMessage != null
-        )
-
-        if (errorMessage != null) {
-            Text(text = errorMessage!!, color = Color.Red, fontSize = 14.sp)
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        // Back Button (Aligned to Top Start)
+        IconButton(
             onClick = {
-                if (username.isBlank()) {
-                    errorMessage = "Username cannot be empty!"
-                } else {
-                    checkUsernameAvailability(db, username, userId, navController) { isAvailable ->
-                        if (isAvailable) {
-                            saveUsername(db, username, userId, navController, context)
-                        } else {
-                            errorMessage = "Username already taken! Try another."
-                        }
-                    }
+                navController.navigate("authScreen") {
+                    popUpTo("landingPage") { inclusive = true }
                 }
             },
-            modifier = Modifier.fillMaxWidth(0.6f)
+            modifier = Modifier.align(Alignment.TopStart)
         ) {
-            Text(text = "Save Username")
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+        }
+
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(text = "Choose a Username", fontSize = 24.sp)
+            Spacer(modifier = Modifier.height(20.dp))
+
+            OutlinedTextField(
+                value = username,
+                onValueChange = {
+                    if (it.length <= 12 && it.matches(Regex("^[a-zA-Z0-9_]*$"))) { // Allow only letters, numbers & underscore
+                        username = it
+                    }
+                },
+                label = { Text("Username") },
+                singleLine = true,
+                maxLines = 1,
+                modifier = Modifier.fillMaxWidth(0.85f)
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = {
+                    if (username.isNotBlank()) {
+                        db.collection("users").document(userId)
+                            .update("username", username)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Username saved!", Toast.LENGTH_SHORT).show()
+                                navController.navigate("gameScreen/$username")
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Error saving username!", Toast.LENGTH_SHORT).show()
+                            }
+                    } else {
+                        Toast.makeText(context, "Username cannot be empty!", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(0.6f)
+            ) {
+                Text(text = "Save Username")
+            }
         }
     }
-}
-
-fun checkUsernameAvailability(
-    db: FirebaseFirestore,
-    username: String,
-    userId: String,
-    navController: NavController,
-    callback: (Boolean) -> Unit
-) {
-    db.collection("users")
-        .whereEqualTo("username", username)
-        .get()
-        .addOnSuccessListener { result ->
-            callback(result.isEmpty) // If no results, username is available
-        }
-        .addOnFailureListener {
-            callback(false) // Assume unavailable if query fails
-        }
-}
-
-fun saveUsername(
-    db: FirebaseFirestore,
-    username: String,
-    userId: String,
-    navController: NavController,
-    context: android.content.Context
-) {
-    db.collection("users").document(userId)
-        .update("username", username)
-        .addOnSuccessListener {
-            Toast.makeText(context, "Username saved!", Toast.LENGTH_SHORT).show()
-            navController.navigate("gameScreen/$username")
-        }
-        .addOnFailureListener {
-            Toast.makeText(context, "Error saving username!", Toast.LENGTH_SHORT).show()
-        }
 }
 
 fun firebaseAuthWithGoogle(idToken: String, navController: NavController) {
@@ -325,18 +308,18 @@ fun firebaseAuthWithGoogle(idToken: String, navController: NavController) {
                 db.collection("users").document(userId).get()
                     .addOnSuccessListener { document ->
                         if (document.exists()) {
-                            // ✅ User exists, retrieve username and go to game
+                            // User exists, retrieve username and go to game
                             val username = document.getString("username") ?: "Player"
                             navController.navigate("gameScreen/$username")
                         } else {
-                            // 🚀 New User: Store email, high score, and redirect to username setup
+                            // New User: Store email, high score, and redirect to username setup
                             val newUser = mapOf(
                                 "email" to email,
                                 "highScore" to 0
                             )
 
                             db.collection("users").document(userId)
-                                .set(newUser) // ✅ Store new user data
+                                .set(newUser) // Store new user data
                                 .addOnSuccessListener {
                                     navController.navigate("usernameScreen/$userId") // Redirect to username setup
                                 }

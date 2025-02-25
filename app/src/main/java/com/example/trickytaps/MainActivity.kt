@@ -70,9 +70,8 @@ fun AppNavigation(viewModel: MultiplayerViewModel) {
             val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
             RotateToLandscapeScreen(navController, playerCount)
         }
-        composable("multiplayerScreen/{playerCount}") { backStackEntry ->
-            val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
-            MultiplayerScreen(navController, viewModel) // ✅ Pass viewModel
+        composable("multiplayerScreen/{playerCount}") {
+            MultiplayerScreen(navController, viewModel) // Pass viewModel
         }
         composable("authScreen") { AuthScreen(navController) }
         composable("usernameScreen/{userId}") { backStackEntry ->
@@ -162,17 +161,25 @@ fun MultiplayerModeSelectionScreen(navController: NavController, viewModel: Mult
 
             OutlinedTextField(
                 value = player1,
-                onValueChange = { if (it.length <= 12) player1 = it }, // Limits input to 12 characters
+                onValueChange = {
+                    if (it.length <= 12 && it.matches(Regex("^[a-zA-Z0-9_]*$"))) { // Only allow letters, numbers & underscore
+                        player1 = it
+                    }
+                },
                 label = { Text("Player 1 Name") },
-                singleLine = true, // Ensures a single-line input
-                maxLines = 1, // Prevents multi-line expansion
+                singleLine = true,
+                maxLines = 1,
                 modifier = Modifier.fillMaxWidth(0.85f)
             )
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = player2,
-                onValueChange = { if (it.length <= 12) player2 = it },
+                onValueChange = {
+                    if (it.length <= 12 && it.matches(Regex("^[a-zA-Z0-9_]*$"))) {
+                        player2 = it
+                    }
+                },
                 label = { Text("Player 2 Name") },
                 singleLine = true,
                 maxLines = 1,
@@ -183,7 +190,11 @@ fun MultiplayerModeSelectionScreen(navController: NavController, viewModel: Mult
             if (playerCount == 3) {
                 OutlinedTextField(
                     value = player3,
-                    onValueChange = { if (it.length <= 12) player3 = it },
+                    onValueChange = {
+                        if (it.length <= 12 && it.matches(Regex("^[a-zA-Z0-9_]*$"))) {
+                            player3 = it
+                        }
+                    },
                     label = { Text("Player 3 Name") },
                     singleLine = true,
                     maxLines = 1,
@@ -205,10 +216,7 @@ fun MultiplayerModeSelectionScreen(navController: NavController, viewModel: Mult
             Spacer(modifier = Modifier.height(20.dp))
 
             Button(onClick = {
-                val names = if (playerCount == 3) listOf(player1, player2, player3) else listOf(
-                    player1,
-                    player2
-                )
+                val names = if (playerCount == 3) listOf(player1, player2, player3) else listOf(player1, player2)
                 viewModel.setPlayers(names)
                 navController.navigate("rotateScreen/$playerCount")
             }) {

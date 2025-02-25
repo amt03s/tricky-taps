@@ -229,6 +229,7 @@ fun UsernameScreen(navController: NavController, userId: String) {
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
     var username by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -241,24 +242,28 @@ fun UsernameScreen(navController: NavController, userId: String) {
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            label = { Text("Username") }
+            label = { Text("Username") },
+            isError = errorMessage != null
         )
+
+        if (errorMessage != null) {
+            Text(text = errorMessage!!, color = Color.Red, fontSize = 14.sp)
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
 
         Button(
             onClick = {
-                if (username.isNotBlank()) {
-                    db.collection("users").document(userId)
-                        .update("username", username) // Update Firestore without overwriting email
-                        .addOnSuccessListener {
-                            Toast.makeText(context, "Username saved!", Toast.LENGTH_SHORT).show()
-                            navController.navigate("gameScreen/$username")
-                        }
-                        .addOnFailureListener {
-                            Toast.makeText(context, "Error saving username!", Toast.LENGTH_SHORT).show()
-                        }
+                if (username.isBlank()) {
+                    errorMessage = "Username cannot be empty!"
                 } else {
-                    Toast.makeText(context, "Username cannot be empty!", Toast.LENGTH_SHORT).show()
+                    checkUsernameAvailability(db, username, userId, navController) { isAvailable ->
+                        if (isAvailable) {
+                            saveUsername(db, username, userId, navController, context)
+                        } else {
+                            errorMessage = "Username already taken! Try another."
+                        }
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth(0.6f)
@@ -266,6 +271,42 @@ fun UsernameScreen(navController: NavController, userId: String) {
             Text(text = "Save Username")
         }
     }
+}
+
+fun checkUsernameAvailability(
+    db: FirebaseFirestore,
+    username: String,
+    userId: String,
+    navController: NavController,
+    callback: (Boolean) -> Unit
+) {
+    db.collection("users")
+        .whereEqualTo("username", username)
+        .get()
+        .addOnSuccessListener { result ->
+            callback(result.isEmpty) // If no results, username is available
+        }
+        .addOnFailureListener {
+            callback(false) // Assume unavailable if query fails
+        }
+}
+
+fun saveUsername(
+    db: FirebaseFirestore,
+    username: String,
+    userId: String,
+    navController: NavController,
+    context: android.content.Context
+) {
+    db.collection("users").document(userId)
+        .update("username", username)
+        .addOnSuccessListener {
+            Toast.makeText(context, "Username saved!", Toast.LENGTH_SHORT).show()
+            navController.navigate("gameScreen/$username")
+        }
+        .addOnFailureListener {
+            Toast.makeText(context, "Error saving username!", Toast.LENGTH_SHORT).show()
+        }
 }
 
 fun firebaseAuthWithGoogle(idToken: String, navController: NavController) {

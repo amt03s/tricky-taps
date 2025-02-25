@@ -1,3 +1,4 @@
+// GameScreen.kt
 package com.example.trickytaps
 
 import androidx.compose.foundation.background
@@ -232,10 +233,11 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
     var leaderboard by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Fetch leaderboard data from Firestore
+    // Fetch only the top 10 players from Firestore
     LaunchedEffect(Unit) {
         db.collection("users")
             .orderBy("highScore", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .limit(10) // Limit to Top 10 players
             .get()
             .addOnSuccessListener { result ->
                 val users = result.documents.mapNotNull { doc ->

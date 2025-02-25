@@ -1,3 +1,4 @@
+// TrickQuestion.kt
 package com.example.trickytaps
 
 import androidx.compose.ui.graphics.Color

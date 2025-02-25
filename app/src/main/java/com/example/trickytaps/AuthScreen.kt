@@ -1,3 +1,4 @@
+// AuthScreen.kt
 package com.example.trickytaps
 
 import android.content.Intent

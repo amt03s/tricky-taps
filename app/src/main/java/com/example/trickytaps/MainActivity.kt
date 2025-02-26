@@ -4,42 +4,24 @@ package com.example.trickytaps
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.trickytaps.modules.auth.AuthScreen
+import com.example.trickytaps.modules.auth.Help
+import com.example.trickytaps.modules.auth.TrickyTapsLandingPage
+import com.example.trickytaps.modules.auth.UsernameScreen
+import com.example.trickytaps.modules.multi.MultiplayerModeSelectionScreen
+import com.example.trickytaps.modules.multi.MultiplayerScreen
+import com.example.trickytaps.modules.multi.MultiplayerViewModel
+import com.example.trickytaps.modules.single.DifficultyModeScreen
+import com.example.trickytaps.modules.single.GameOverScreen
+import com.example.trickytaps.modules.single.GameScreen
+import com.example.trickytaps.modules.single.LeaderboardScreen
+import com.example.trickytaps.modules.single.RotateToLandscapeScreen
 import com.example.trickytaps.ui.theme.TrickyTapsTheme
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -61,7 +43,7 @@ fun AppNavigation(viewModel: MultiplayerViewModel) {
 
     NavHost(navController, startDestination = "landingPage") {
         composable("landingPage") {
-            MainScreen(navController)
+            TrickyTapsLandingPage(navController)
         }
         composable("multiplayerModeSelection") {
             MultiplayerModeSelectionScreen(navController, viewModel) // Pass ViewModel
@@ -78,150 +60,30 @@ fun AppNavigation(viewModel: MultiplayerViewModel) {
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             UsernameScreen(navController, userId)
         }
-        composable("gameScreen/{username}") { backStackEntry ->
-            val username = backStackEntry.arguments?.getString("username") ?: "Player"
-            GameScreen(navController, username, FirebaseFirestore.getInstance())
-        }
         composable("leaderboardScreen/{username}/{score}") { backStackEntry ->
             val username = backStackEntry.arguments?.getString("username") ?: "Player"
             val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
             LeaderboardScreen(navController, FirebaseFirestore.getInstance(), username, score)
         }
         composable("gameOverScreen/{username}/{score}") { backStackEntry ->
+            val initialTime= backStackEntry.arguments?.getString("initialTime") ?.toIntOrNull() ?: 0
             val username = backStackEntry.arguments?.getString("username") ?: "Player"
             val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
-            GameOverScreen(navController, username, score, FirebaseFirestore.getInstance())
+            GameOverScreen(navController, username, score, FirebaseFirestore.getInstance(), initialTime)
         }
-    }
-}
-
-@Composable
-fun MainScreen(navController: NavController) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = "Tricky Taps", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(
-            onClick = { navController.navigate("authScreen") },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
-            modifier = Modifier.fillMaxWidth(0.6f)
-        ) {
-            Text(text = "Single Player", fontSize = 18.sp, color = Color.White)
+        composable("help"){
+            Help(navController)
+        }
+        composable("modeScreen/{username}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: ""
+            DifficultyModeScreen(navController = navController, username)
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        composable("gameScreen/{initialTime}/{username}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: ""
+            val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
 
-        Button(
-            onClick = { navController.navigate("multiplayerModeSelection") },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
-            modifier = Modifier.fillMaxWidth(0.6f)
-        ) {
-            Text(text = "Multiplayer", fontSize = 18.sp, color = Color.White)
-        }
-    }
-}
-
-@Composable
-fun MultiplayerModeSelectionScreen(navController: NavController, viewModel: MultiplayerViewModel) {
-    var player1 by remember { mutableStateOf("") }
-    var player2 by remember { mutableStateOf("") }
-    var player3 by remember { mutableStateOf("") }
-    var playerCount by remember { mutableIntStateOf(2) } // Default to 2 players
-
-    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Back Button (Aligned to Top Start)
-        IconButton(
-            onClick = {
-                navController.navigate("landingPage") {
-                    popUpTo("authScreen") { inclusive = true }
-                }
-            },
-            modifier = Modifier.align(Alignment.TopStart)
-        ) {
-            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Text(text = "Enter Player Names", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(20.dp))
-
-            OutlinedTextField(
-                value = player1,
-                onValueChange = {
-                    if (it.length <= 12 && it.matches(Regex("^[a-zA-Z0-9_]*$"))) { // Only allow letters, numbers & underscore
-                        player1 = it
-                    }
-                },
-                label = { Text("Player 1 Name") },
-                singleLine = true,
-                maxLines = 1,
-                modifier = Modifier.fillMaxWidth(0.85f)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = player2,
-                onValueChange = {
-                    if (it.length <= 12 && it.matches(Regex("^[a-zA-Z0-9_]*$"))) {
-                        player2 = it
-                    }
-                },
-                label = { Text("Player 2 Name") },
-                singleLine = true,
-                maxLines = 1,
-                modifier = Modifier.fillMaxWidth(0.85f)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (playerCount == 3) {
-                OutlinedTextField(
-                    value = player3,
-                    onValueChange = {
-                        if (it.length <= 12 && it.matches(Regex("^[a-zA-Z0-9_]*$"))) {
-                            player3 = it
-                        }
-                    },
-                    label = { Text("Player 3 Name") },
-                    singleLine = true,
-                    maxLines = 1,
-                    modifier = Modifier.fillMaxWidth(0.85f)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            Row {
-                Button(onClick = { playerCount = 2 }) {
-                    Text(text = "2 Players")
-                }
-                Spacer(modifier = Modifier.width(10.dp))
-                Button(onClick = { playerCount = 3 }) {
-                    Text(text = "3 Players")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Button(onClick = {
-                val names = if (playerCount == 3) listOf(player1, player2, player3) else listOf(player1, player2)
-                viewModel.setPlayers(names)
-                navController.navigate("rotateScreen/$playerCount")
-            }) {
-                Text(text = "Start Game")
-            }
+            GameScreen(navController = navController, initialTime = initialTime, username = username, db = FirebaseFirestore.getInstance())
         }
     }
 }
@@ -230,5 +92,5 @@ fun MultiplayerModeSelectionScreen(navController: NavController, viewModel: Mult
 @Composable
 fun MainScreenPreview() {
     val navController = rememberNavController()
-    MainScreen(navController)
+    TrickyTapsLandingPage(navController)
 }

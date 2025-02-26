@@ -1,5 +1,5 @@
 // AuthScreen.kt
-package com.example.trickytaps
+package com.example.trickytaps.modules.auth
 
 import android.content.Intent
 import android.widget.Toast
@@ -21,10 +21,12 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.trickytaps.R
 import com.google.android.gms.auth.api.signin.*
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.*
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 
 @Composable
 fun AuthScreen(navController: NavController) {
@@ -42,7 +44,7 @@ fun AuthScreen(navController: NavController) {
         val task = GoogleSignIn.getSignedInAccountFromIntent(data)
         try {
             val account = task.getResult(ApiException::class.java)
-            firebaseAuthWithGoogle(account.idToken!!, navController)
+            firebaseAuthWithGoogle(account.idToken!!, navController, context)
         } catch (e: ApiException) {
             Toast.makeText(context, "Google sign-in failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
@@ -209,7 +211,7 @@ fun loginUser(email: String, password: String, navController: NavController, con
                         val username = document.getString("username")
                         if (username != null) {
                             Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
-                            navController.navigate("gameScreen/$username")
+                            navController.navigate("modeScreen/$username")
                         } else {
                             Toast.makeText(context, "Username not found, please set it up.", Toast.LENGTH_SHORT).show()
                             navController.navigate("usernameScreen/$userId")
@@ -272,10 +274,10 @@ fun UsernameScreen(navController: NavController, userId: String) {
                 onClick = {
                     if (username.isNotBlank()) {
                         db.collection("users").document(userId)
-                            .update("username", username)
+                            .set(mapOf("username" to username), SetOptions.merge())
                             .addOnSuccessListener {
                                 Toast.makeText(context, "Username saved!", Toast.LENGTH_SHORT).show()
-                                navController.navigate("gameScreen/$username")
+                                navController.navigate("modeScreen/$username")
                             }
                             .addOnFailureListener {
                                 Toast.makeText(context, "Error saving username!", Toast.LENGTH_SHORT).show()
@@ -292,7 +294,7 @@ fun UsernameScreen(navController: NavController, userId: String) {
     }
 }
 
-fun firebaseAuthWithGoogle(idToken: String, navController: NavController) {
+fun firebaseAuthWithGoogle(idToken: String, navController: NavController, context: android.content.Context) {
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
 
@@ -301,35 +303,25 @@ fun firebaseAuthWithGoogle(idToken: String, navController: NavController) {
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val user = auth.currentUser
-                val userId = user!!.uid
-                val email = user.email ?: ""
+                if (user != null) {
+                    val userId = user.uid
+                    val email = user.email ?: ""
 
-                // Check if user already exists in Firestore
-                db.collection("users").document(userId).get()
-                    .addOnSuccessListener { document ->
-                        if (document.exists()) {
-                            // User exists, retrieve username and go to game
-                            val username = document.getString("username") ?: "Player"
-                            navController.navigate("gameScreen/$username")
-                        } else {
-                            // New User: Store email, high score, and redirect to username setup
-                            val newUser = mapOf(
-                                "email" to email,
-                                "highScore" to 0
-                            )
-
-                            db.collection("users").document(userId)
-                                .set(newUser) // Store new user data
-                                .addOnSuccessListener {
-                                    navController.navigate("usernameScreen/$userId") // Redirect to username setup
-                                }
+                    db.collection("users").document(userId).get()
+                        .addOnSuccessListener { document ->
+                            val username = document.getString("username")
+                            if (username != null) {
+                                navController.navigate("modeScreen/$username")
+                            } else {
+                                navController.navigate("usernameScreen/$userId")
+                            }
                         }
-                    }
-                    .addOnFailureListener { e ->
-                        println("Firestore error: $e")
-                    }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(context, "Error retrieving user data: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                }
             } else {
-                println("Google sign-in failed: ${task.exception?.message}")
+                Toast.makeText(context, "Authentication failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
             }
         }
 }

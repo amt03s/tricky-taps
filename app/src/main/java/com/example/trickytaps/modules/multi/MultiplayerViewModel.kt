@@ -1,5 +1,5 @@
 // MultiplayerViewModel.kt
-package com.example.trickytaps
+package com.example.trickytaps.modules.multi
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

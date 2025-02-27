@@ -4,6 +4,10 @@ package com.example.trickytaps.modules.single
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExitToApp
@@ -12,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -348,13 +353,88 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
             if (isLoading) {
                 CircularProgressIndicator()
             } else {
-                leaderboard.forEachIndexed { index, (user, highScore) ->
-                    Text(
-                        text = "${index + 1}. $user - $highScore points",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                // Lazy Grid layout for responsive display
+                val gridState = rememberLazyGridState()
+                val columns = when {
+                    LocalConfiguration.current.screenWidthDp < 600 -> 1 // For small screens
+                    LocalConfiguration.current.screenWidthDp < 900 -> 2 // For medium screens
+                    else -> 3 // For large screens
+                }
+
+                LazyVerticalGrid(
+                    state = gridState,
+                    columns = GridCells.Fixed(columns),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(8.dp)
+                ) {
+                    items(leaderboard) { (user, highScore) ->
+                        // Determine the position (rank)
+                        val rank = leaderboard.indexOfFirst { it.first == user } + 1
+                        val isTop3 = rank <= 3 // For top 3 users
+
+                        Card(
+                            modifier = Modifier.padding(8.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (isTop3) Color(0xFFD4AF37) else Color.Gray), // Gold for top 3
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                // Left side: Column for Username, Medal, and Place
+                                Column(
+                                    horizontalAlignment = Alignment.Start
+                                ) {
+                                    // Username and Medal
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = user,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isTop3) Color.White else Color.Black
+                                        )
+                                        if (isTop3) {
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            // Display "1st", "2nd", or "3rd" as the medal
+                                            Text(
+                                                text = when (rank) {
+                                                    1 -> "🥇"
+                                                    2 -> "🥈"
+                                                    3 -> "🥉"
+                                                    else -> ""
+                                                },
+                                                fontSize = 18.sp,
+                                                color = Color.White
+                                            )
+                                        }
+                                    }
+                                    // Place under the username
+                                    Text(
+                                        text = "${rank}${when (rank) {
+                                            1 -> "st"
+                                            2 -> "nd"
+                                            3 -> "rd"
+                                            else -> "th"
+                                        }} Place",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (isTop3) Color.White else Color.Black
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.weight(1f))
+
+                                // Right side: Points
+                                Text(
+                                    text = "$highScore points",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isTop3) Color.White else Color.Black
+                                )
+                            }
+                        }
+                    }
                 }
             }
 

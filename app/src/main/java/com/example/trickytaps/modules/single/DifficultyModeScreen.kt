@@ -1,3 +1,4 @@
+// DifficultyModeScreen.kt
 package com.example.trickytaps.modules.single
 
 import androidx.compose.foundation.layout.Arrangement

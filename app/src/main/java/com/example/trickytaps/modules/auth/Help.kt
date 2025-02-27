@@ -1,3 +1,4 @@
+// Help.kt
 package com.example.trickytaps.modules.auth
 
 import androidx.compose.foundation.layout.Arrangement

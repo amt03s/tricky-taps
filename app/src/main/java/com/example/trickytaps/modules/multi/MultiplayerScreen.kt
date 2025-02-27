@@ -1,5 +1,5 @@
 // MultiplayerScreen.kt
-package com.example.trickytaps
+package com.example.trickytaps.modules.multi
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.trickytaps.TrickQuestion
+import com.example.trickytaps.generateTrickQuestion
 import kotlinx.coroutines.delay
 
 class MultiplayerActivity : ComponentActivity() {

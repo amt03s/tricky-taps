@@ -1,5 +1,5 @@
 // GameScreen.kt
-package com.example.trickytaps
+package com.example.trickytaps.modules.single
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,18 +22,24 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import com.example.trickytaps.generateTrickQuestion
 
 @Composable
-fun GameScreen(navController: NavController, username: String, db: FirebaseFirestore) {
+fun GameScreen(navController: NavController, initialTime: Int, username: String, db: FirebaseFirestore) {
     var score by remember { mutableIntStateOf(0) }
-    var timeLeft by remember { mutableIntStateOf(30) } // 5-second gameplay
+    var timeLeft by remember { mutableIntStateOf(initialTime) } // Use `initialTime` instead of difficulty string
     var highScore by remember { mutableIntStateOf(0) }
     var gameOver by remember { mutableStateOf(false) }
     var currentQuestion by remember { mutableStateOf(generateTrickQuestion()) }
     var paused by remember { mutableStateOf(false) }
+    var questionCount by remember { mutableIntStateOf(0) } // Track number of questions
 
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid
+
+    LaunchedEffect(initialTime) {
+        timeLeft = initialTime
+    }
 
     // Retrieve User's High Score from Firestore
     LaunchedEffect(userId) {
@@ -49,17 +55,27 @@ fun GameScreen(navController: NavController, username: String, db: FirebaseFires
         }
     }
 
-    // Countdown Timer (Only runs if not paused)
+    // Question Timer
     LaunchedEffect(timeLeft, paused) {
         while (timeLeft > 0 && !paused && !gameOver) {
             delay(1000L)
             timeLeft--
         }
-        if (timeLeft == 0) gameOver = true
+
+        if (timeLeft == 0 && !gameOver) {
+            if (questionCount < 9) {
+                // Move to next question
+                currentQuestion = generateTrickQuestion()
+                timeLeft = initialTime // Reset timer for next question
+                questionCount++
+            } else {
+                gameOver = true // End game after 10 questions
+            }
+        }
     }
 
     if (gameOver) {
-        GameOverScreen(score = score, navController = navController, username = username, db = db)
+        GameOverScreen(score = score, navController = navController, username = username, db = db, initialTime = initialTime)
     } else {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -75,6 +91,7 @@ fun GameScreen(navController: NavController, username: String, db: FirebaseFires
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(text = "Score: $score", fontSize = 20.sp)
+                Text(text = "Question ${questionCount + 1} of 10", fontSize = 18.sp) // Show progress
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Display Trick Question
@@ -110,7 +127,14 @@ fun GameScreen(navController: NavController, username: String, db: FirebaseFires
                                 if (option == currentQuestion.correctAnswer) {
                                     score += 10
                                 }
-                                currentQuestion = generateTrickQuestion()
+
+                                if (questionCount < 10) {
+                                    currentQuestion = generateTrickQuestion()
+                                    timeLeft = initialTime // Reset timer for next question
+                                    questionCount++
+                                } else {
+                                    gameOver = true
+                                }
                             }
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
@@ -120,7 +144,7 @@ fun GameScreen(navController: NavController, username: String, db: FirebaseFires
                 }
             }
 
-            // Pause Button (Top Right)
+            // Pause Button
             Button(
                 onClick = { paused = !paused },
                 modifier = Modifier
@@ -134,7 +158,7 @@ fun GameScreen(navController: NavController, username: String, db: FirebaseFires
 }
 
 @Composable
-fun GameOverScreen(navController: NavController, username: String, score: Int, db: FirebaseFirestore) {
+fun GameOverScreen(navController: NavController, username: String, score: Int, db: FirebaseFirestore, initialTime: Int) {
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid
 
@@ -162,7 +186,7 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         IconButton(
             onClick = {
-                navController.navigate("authScreen") {
+                navController.navigate("modeScreen/$username") {
                     popUpTo("landingPage") { inclusive = true }
                 }
             },
@@ -179,7 +203,13 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
             Text(text = "Final Score: $score", fontSize = 24.sp)
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(onClick = { navController.navigate("gameScreen/$username") }) {
+            Button(onClick = {
+//                navController.popBackStack("gameScreen", inclusive = true) // Clears previous game instance
+//                navController.navigate("gameScreen/$initialTime/$username") // Restart game
+                navController.navigate("gameScreen/$initialTime/$username") {
+                    popUpTo("gameScreen") { inclusive = true }
+                }
+            }) {
                 Text(text = "Play Again")
             }
 

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,6 +34,7 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
     var currentQuestion by remember { mutableStateOf(generateTrickQuestion()) }
     var paused by remember { mutableStateOf(false) }
     var questionCount by remember { mutableIntStateOf(0) } // Track number of questions
+    var showPauseDialog by remember { mutableStateOf(false) } // State to show the PauseDialog
 
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid
@@ -83,22 +85,36 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(text = "Player: $username", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Blue)
-                Text(text = "High Score: $highScore", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Green)
+                Text(
+                    text = "Player: $username",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Blue
+                )
+                Text(
+                    text = "High Score: $highScore",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Green
+                )
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(text = "Time Left: $timeLeft", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(text = "Score: $score", fontSize = 20.sp)
-                Text(text = "Question ${questionCount + 1} of 10", fontSize = 18.sp) // Show progress
+                Text(
+                    text = "Question ${questionCount + 1} of 10",
+                    fontSize = 18.sp
+                ) // Show progress
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Display Trick Question
                 Text(
                     text = buildAnnotatedString {
                         val questionText = currentQuestion.question
-                        val colorText = questionText.substringAfter("**").substringBefore("**") // Extract color word
+                        val colorText = questionText.substringAfter("**")
+                            .substringBefore("**") // Extract color word
                         val colorStartIndex = questionText.indexOf(colorText)
 
                         append(questionText)
@@ -144,15 +160,42 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
                 }
             }
 
+//            // Pause Button
+//            Button(
+//                onClick = { paused = !paused },
+//                modifier = Modifier
+//                    .align(Alignment.TopEnd)
+//                    .padding(8.dp)
+//            ) {
+//                Text(if (paused) "Resume" else "Pause")
+//            }
             // Pause Button
-            Button(
-                onClick = { paused = !paused },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
+            IconButton(
+                onClick = {
+                    paused = !paused
+                    showPauseDialog = true
+                },
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
             ) {
-                Text(if (paused) "Resume" else "Pause")
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Pause",
+                    modifier = Modifier.size(32.dp)
+                )
             }
+        }
+
+        // Show Pause Dialog if paused
+        if (showPauseDialog) {
+            PauseDialog(
+                onResume = {
+                    showPauseDialog = false
+                    paused = false
+                },
+                onToggleMute = {
+                    // Handle mute logic here
+                }
+            )
         }
     }
 }
@@ -320,4 +363,21 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
     }
 }
 
-
+@Composable
+fun PauseDialog(onResume: () -> Unit, onToggleMute: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = { onResume() },
+        title = { Text(text = "Game Paused") },
+        text = { Text(text = "Would you like to resume the game?") },
+        confirmButton = {
+            Button(onClick = onResume) {
+                Text("Resume")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onToggleMute) {
+                Text("Toggle Mute")
+            }
+        }
+    )
+}

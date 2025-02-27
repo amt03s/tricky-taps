@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.trickytaps.TrickQuestion
 import com.example.trickytaps.generateTrickQuestion
+import com.example.trickytaps.modules.single.PauseDialog
 import kotlinx.coroutines.delay
 
 class MultiplayerActivity : ComponentActivity() {
@@ -53,6 +55,7 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
     var gameOver by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
     val currentQuestion = remember { mutableStateOf(generateTrickQuestion()) }
+    var showPauseDialog by remember { mutableStateOf(false) } // State to show the PauseDialog
 
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
@@ -168,14 +171,40 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
                 }
             }
 
-            Button(
-                onClick = { isPaused = !isPaused },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
+//            Button(
+//                onClick = { isPaused = !isPaused },
+//                modifier = Modifier
+//                    .align(Alignment.TopEnd)
+//                    .padding(8.dp)
+//            ) {
+//                Text(if (isPaused) "Resume" else "Pause")
+//            }
+            IconButton(
+                onClick = {
+                    isPaused = !isPaused
+                    showPauseDialog = true
+                },
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
             ) {
-                Text(if (isPaused) "Resume" else "Pause")
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Pause",
+                    modifier = Modifier.size(32.dp)
+                )
             }
+        }
+
+        // Show Pause Dialog if paused
+        if (showPauseDialog) {
+            PauseDialog(
+                onResume = {
+                    showPauseDialog = false
+                    isPaused = false
+                },
+                onToggleMute = {
+                    // Handle mute logic here
+                }
+            )
         }
     }
 }
@@ -287,8 +316,4 @@ fun MultiplayerGameOverScreen(
     }
 
 }
-
-
-
-
 

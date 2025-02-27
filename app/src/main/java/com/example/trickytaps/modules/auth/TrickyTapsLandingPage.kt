@@ -29,7 +29,9 @@ fun TrickyTapsLandingPage(navController: NavController) {
             },
             modifier = Modifier.align(Alignment.TopEnd)
         ) {
-            Icon(imageVector = Icons.Default.HelpOutline, contentDescription = "Help")
+            Icon(imageVector = Icons.Default.HelpOutline,
+                contentDescription = "Help",
+                modifier = Modifier.size(32.dp))
         }
         Column(
             modifier = Modifier

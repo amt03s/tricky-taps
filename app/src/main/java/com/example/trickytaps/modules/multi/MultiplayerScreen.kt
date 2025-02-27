@@ -50,8 +50,9 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
     val playerNames by viewModel.playerNames.collectAsState()
     val scores by viewModel.scores.collectAsState()
     val playerCount by viewModel.playerCount.collectAsState() // Retrieve player count correctly
-
-    var timeLeft by remember { mutableIntStateOf(5) } // 5-second gameplay
+    val gameTime by viewModel.gameTime.collectAsState() // Retrieve time from ViewModel
+    //var timeLeft by remember { mutableIntStateOf(5) } //the number here will be the number from the user entered
+    var timeLeft by remember { mutableIntStateOf(gameTime) } // Use set time
     var gameOver by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
     val currentQuestion = remember { mutableStateOf(generateTrickQuestion()) }

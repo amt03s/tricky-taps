@@ -18,11 +18,21 @@ class MultiplayerViewModel : ViewModel() {
     private val _playerCount = MutableStateFlow(2) // Default to 2 players
     val playerCount: StateFlow<Int> = _playerCount
 
+    private val _gameTime = MutableStateFlow(30) // Default game time
+    val gameTime: StateFlow<Int> = _gameTime
+
+    fun setGameTime(time: Int) {
+        _gameTime.value = time
+    }
     fun setPlayers(names: List<String>) {
         _playerNames.value = names
         _scores.value = names.associateWith { 0 } // Reset scores
         _winCounts.value = names.associateWith { 0 } // Wins persist across rounds
         _playerCount.value = names.size
+    }
+
+    fun getPlayers(): List<String> {
+        return _playerNames.value
     }
 
     fun updateScore(playerName: String) { // Updates only in-game points
@@ -42,6 +52,8 @@ class MultiplayerViewModel : ViewModel() {
 
     fun resetScores() { // Resets round scores, NOT total wins
         _scores.value = _playerNames.value.associateWith { 0 }
+
+
     }
 }
 

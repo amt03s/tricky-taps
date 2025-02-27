@@ -10,9 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.trickytaps.modules.single.PauseDialog
 
 @Composable
 fun MultiplayerModeSelectionScreen(navController: NavController, viewModel: MultiplayerViewModel) {
@@ -37,6 +41,8 @@ fun MultiplayerModeSelectionScreen(navController: NavController, viewModel: Mult
     var player2 by remember { mutableStateOf("") }
     var player3 by remember { mutableStateOf("") }
     var playerCount by remember { mutableIntStateOf(2) } // Default to 2 players
+
+    var showTimer by remember { mutableStateOf(false) } // State to show the PauseDialog
 
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // Back Button (Aligned to Top Start)
@@ -119,13 +125,103 @@ fun MultiplayerModeSelectionScreen(navController: NavController, viewModel: Mult
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Button(onClick = {
-                val names = if (playerCount == 3) listOf(player1, player2, player3) else listOf(player1, player2)
-                viewModel.setPlayers(names)
-                navController.navigate("rotateScreen/$playerCount")
-            }) {
-                Text(text = "Start Game")
+//            Button(onClick = {
+//                val names = if (playerCount == 3) listOf(player1, player2, player3) else listOf(player1, player2)
+//                viewModel.setPlayers(names)
+//                navController.navigate("rotateScreen/$playerCount")
+//            }) {
+//                Text(text = "Start Game")
+//            }
+//            Button(onClick = {
+//                val safePlayer1 = player1.ifEmpty { "Player1" }
+//                val safePlayer2 = player2.ifEmpty { "Player2" }
+//                val safePlayer3 = if (playerCount == 3) player3.ifEmpty { "null" } else "null"
+//
+//                navController.navigate("modeSelection/$playerCount/$safePlayer1/$safePlayer2/$safePlayer3")
+//            }) {
+//                Text(text = "Set Timer!")
+//            }
+
+            Button(
+                onClick = { showTimer = true },
+            ) {
+                Text(text = "Set Timer")
             }
         }
+
+        /// Show Timer Dialog when `showTimer` is true
+        if (showTimer) {
+            Timer(
+                onResume = { showTimer = false },
+                navController = navController,
+                viewModel = viewModel,
+                player1 = player1,
+                player2 = player2,
+                player3 = player3,
+                playerCount = playerCount,
+            )
+        }
     }
+}
+
+@Composable
+fun Timer(
+    onResume: () -> Unit,
+    navController: NavController,
+    viewModel: MultiplayerViewModel,
+    player1: String,
+    player2: String,
+    player3: String,
+    playerCount: Int
+) {
+    var time by remember { mutableIntStateOf(30) } // Default time in seconds
+
+
+    AlertDialog(
+        onDismissRequest = { onResume() }, // Close dialog on outside click
+        title = {
+            Text(text = "Set Game Timer", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(onClick = { if (time > 5) time -= 5 }) {
+                        Text(text = "-5s")
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(text = "$time seconds", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Button(onClick = { if (time < 300) time += 5 }) {
+                        Text(text = "+5s")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Button(onClick = {
+                    viewModel.setGameTime(time) // Store time in ViewModel
+                    onResume() // Close the dialog
+//                    val names = if (playerCount == 3) listOf(player1, player2, player3) else listOf(player1, player2)
+                    val names = listOf(player1.ifBlank { "Player1" }, player2.ifBlank { "Player2" }) +
+                            if (playerCount == 3) listOf(player3.ifBlank { "Player3" }) else emptyList()
+
+                    viewModel.setPlayers(names)
+                    navController.navigate("rotateScreen/$playerCount")
+                }) {
+                    Text(text = "Start Game")
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onResume) {
+                Text(text = "Cancel")
+            }
+        }
+    )
 }

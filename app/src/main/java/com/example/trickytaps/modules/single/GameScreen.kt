@@ -1,6 +1,8 @@
 // GameScreen.kt
 package com.example.trickytaps.modules.single
 
+import android.content.pm.ActivityInfo
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +46,12 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
 
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid
+
+    val context = LocalContext.current
+    LaunchedEffect(true) {
+        (context as? ComponentActivity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+
 
     LaunchedEffect(initialTime) {
         timeLeft = initialTime

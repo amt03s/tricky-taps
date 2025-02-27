@@ -1,6 +1,8 @@
 //TrickyTapsLandingPage.kt
 package com.example.trickytaps.modules.auth
 
+import android.content.pm.ActivityInfo
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -11,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -19,6 +22,10 @@ import androidx.navigation.NavController
 
 @Composable
 fun TrickyTapsLandingPage(navController: NavController) {
+    val context = LocalContext.current
+    LaunchedEffect(true) {
+        (context as? ComponentActivity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // Back Button (Aligned to Top Start)
         IconButton(

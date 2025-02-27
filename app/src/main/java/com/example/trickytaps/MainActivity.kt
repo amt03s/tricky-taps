@@ -1,6 +1,7 @@
 // MainActivity.kt
 package com.example.trickytaps
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent

@@ -2,7 +2,9 @@
 package com.example.trickytaps.modules.auth
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -48,6 +50,10 @@ fun AuthScreen(navController: NavController) {
         } catch (e: ApiException) {
             Toast.makeText(context, "Google sign-in failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    LaunchedEffect(true) {
+        (context as? ComponentActivity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -171,6 +177,8 @@ fun signUpUser(email: String, password: String, navController: NavController, co
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
 
+
+
     auth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
@@ -199,6 +207,7 @@ fun signUpUser(email: String, password: String, navController: NavController, co
 fun loginUser(email: String, password: String, navController: NavController, context: android.content.Context) {
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
+
 
     auth.signInWithEmailAndPassword(email, password)
         .addOnCompleteListener { task ->
@@ -231,6 +240,7 @@ fun UsernameScreen(navController: NavController, userId: String) {
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
     var username by remember { mutableStateOf("") }
+
 
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // Back Button (Aligned to Top Start)

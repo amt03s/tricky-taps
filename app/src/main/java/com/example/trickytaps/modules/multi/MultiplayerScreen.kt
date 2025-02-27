@@ -61,10 +61,16 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
     val context = LocalContext.current
-    LaunchedEffect(true) {
-        // Lock the screen orientation to landscape when this composable is loaded
+    DisposableEffect(Unit) {
+        // Lock the orientation to landscape when entering this screen
         (context as? ComponentActivity)?.requestedOrientation =
             ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+        // Cleanup: Reset orientation to unspecified (default) when leaving this screen
+        onDispose {
+            (context as? ComponentActivity)?.requestedOrientation =
+                ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED // Remove fixed orientation
+        }
     }
 
     LaunchedEffect(isPortrait) {
@@ -252,13 +258,51 @@ fun MultiplayerGameOverScreen(
     val winners = scores.filter { it.value == maxScore }.keys
 
     val context = LocalContext.current
-    LaunchedEffect(true) {
-        // Lock the screen orientation to landscape when this composable is loaded
+
+    // State to track the action (whether "Play Again" or "Exit" was clicked)
+    var clickedPlayAgain by remember { mutableStateOf(false) }
+
+    // Lock orientation to landscape when the screen is first shown
+    DisposableEffect(Unit) {
         (context as? ComponentActivity)?.requestedOrientation =
             ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        onDispose {
+            // This will be reset when exiting the screen or navigating away
+            if (!clickedPlayAgain) {
+                // If Exit is clicked, reset to portrait
+                (context as? ComponentActivity)?.requestedOrientation =
+                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
+        }
+    }
+
+    // Logic for Play Again button click
+    val handlePlayAgainClick: () -> Unit = {
+        clickedPlayAgain = true
+        // Reset the scores
+        viewModel.resetScores()
+
+        // Navigate to "Play Again" screen
+        navController.navigate("rotateScreen/$playerCount") {
+            // Reset orientation back to landscape if player clicked Play Again
+            (context as? ComponentActivity)?.requestedOrientation =
+                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+    }
+
+    // Logic for Exit button click
+    val handleExitClick: () -> Unit = {
+        clickedPlayAgain = false
+        // Navigate to the landing page or multiplayer mode
+        navController.navigate("landingPage") {
+            // When exit is clicked, reset orientation to portrait
+            (context as? ComponentActivity)?.requestedOrientation =
+                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
     }
 
     LaunchedEffect(Unit) {
+        // Update win count when the screen is shown
         viewModel.updateWinCount()
     }
 
@@ -266,16 +310,7 @@ fun MultiplayerGameOverScreen(
 
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         IconButton(
-            onClick = {
-                // Reset orientation to portrait when exiting multiplayer game over screen
-                (context as? ComponentActivity)?.requestedOrientation =
-                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-
-                // Navigate back to multiplayer mode selection screen
-                navController.navigate("multiplayerModeSelection") {
-                    popUpTo("landingPage") { inclusive = true }
-                }
-            },
+            onClick = handleExitClick, // Exit action
             modifier = Modifier.align(Alignment.TopEnd)
         ) {
             Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Back")
@@ -301,19 +336,16 @@ fun MultiplayerGameOverScreen(
             // Display Games Won Leaderboard
             Text(text = "🏆 Games Won:", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             winCounts.forEach { (player, wins) ->
-                Text(text = "$player: $wins wins", fontSize = 20.sp)
+                // Use a conditional check to decide between "win" or "wins"
+                val winText = if (wins == 1) "win" else "wins"
+                Text(text = "$player: $wins $winText", fontSize = 20.sp)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(onClick = {
-                viewModel.resetScores() // Reset round scores, not win count
-                navController.navigate("rotateScreen/$playerCount")
-            }) {
+            Button(onClick = handlePlayAgainClick) { // Play Again action
                 Text(text = "Play Again")
             }
         }
     }
-
 }
-

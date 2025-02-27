@@ -270,6 +270,7 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
     }
 }
 
+
 @Composable
 fun RotateToLandscapeScreen(navController: NavController, playerCount: Int) {
     val configuration = LocalConfiguration.current
@@ -303,6 +304,7 @@ fun RotateToLandscapeScreen(navController: NavController, playerCount: Int) {
         )
     }
 }
+
 
 @Composable
 fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, username: String, score: Int) {

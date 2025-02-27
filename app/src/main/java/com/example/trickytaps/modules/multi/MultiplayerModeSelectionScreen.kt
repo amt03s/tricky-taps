@@ -1,6 +1,8 @@
 // MultiplayerModeSelectionScreen.kt
 package com.example.trickytaps.modules.multi
 
+import android.content.pm.ActivityInfo
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -179,8 +183,21 @@ fun Timer(
 
     AlertDialog(
         onDismissRequest = { onResume() }, // Close dialog on outside click
+        confirmButton = {},
         title = {
-            Text(text = "Set Game Timer", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Box(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                IconButton(
+                    onClick = onResume,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                }
+                Text(text = "Set Game Timer",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
         },
         text = {
             Column(
@@ -216,11 +233,6 @@ fun Timer(
                 }) {
                     Text(text = "Start Game")
                 }
-            }
-        },
-        confirmButton = {
-            Button(onClick = onResume) {
-                Text(text = "Cancel")
             }
         }
     )

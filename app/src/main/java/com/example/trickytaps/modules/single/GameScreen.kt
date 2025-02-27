@@ -117,10 +117,10 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(text = "Score: $score", fontSize = 20.sp)
-                Text(
-                    text = "Question ${questionCount + 1} of 10",
-                    fontSize = 18.sp
-                ) // Show progress
+//                Text(
+//                    text = "Question ${questionCount + 1} of 10",
+//                    fontSize = 18.sp
+//                ) // Show progress
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Display Trick Question
@@ -174,15 +174,6 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
                 }
             }
 
-//            // Pause Button
-//            Button(
-//                onClick = { paused = !paused },
-//                modifier = Modifier
-//                    .align(Alignment.TopEnd)
-//                    .padding(8.dp)
-//            ) {
-//                Text(if (paused) "Resume" else "Pause")
-//            }
             // Pause Button
             IconButton(
                 onClick = {

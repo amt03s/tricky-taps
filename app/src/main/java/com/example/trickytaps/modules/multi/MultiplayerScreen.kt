@@ -94,20 +94,20 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                if (isPaused) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Rotate your device back to Landscape to continue!",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            color = Color.Red
-                        )
-                    }
-                } else {
+//                if (isPaused) {
+//                    Box(
+//                        modifier = Modifier.fillMaxSize(),
+//                        contentAlignment = Alignment.Center
+//                    ) {
+//                        Text(
+//                            text = "Rotate your device back to Landscape to continue!",
+//                            fontSize = 24.sp,
+//                            fontWeight = FontWeight.Bold,
+//                            textAlign = TextAlign.Center,
+//                            color = Color.Red
+//                        )
+//                    }
+//                } else {
                     Text(
                         text = "Time Left: $timeLeft",
                         fontSize = 24.sp,
@@ -175,16 +175,8 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
                         }
                     }
                 }
-            }
-
-//            Button(
-//                onClick = { isPaused = !isPaused },
-//                modifier = Modifier
-//                    .align(Alignment.TopEnd)
-//                    .padding(8.dp)
-//            ) {
-//                Text(if (isPaused) "Resume" else "Pause")
 //            }
+
             IconButton(
                 onClick = {
                     isPaused = !isPaused

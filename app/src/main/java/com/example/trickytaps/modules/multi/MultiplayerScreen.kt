@@ -1,6 +1,7 @@
 // MultiplayerScreen.kt
 package com.example.trickytaps.modules.multi
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +56,13 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
 
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+
+    val context = LocalContext.current
+    LaunchedEffect(true) {
+        // Lock the screen orientation to landscape when this composable is loaded
+        (context as? ComponentActivity)?.requestedOrientation =
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    }
 
     LaunchedEffect(isPortrait) {
         isPaused = isPortrait
@@ -213,6 +222,13 @@ fun MultiplayerGameOverScreen(
     val maxScore = scores.values.maxOrNull() ?: 0
     val winners = scores.filter { it.value == maxScore }.keys
 
+    val context = LocalContext.current
+    LaunchedEffect(true) {
+        // Lock the screen orientation to landscape when this composable is loaded
+        (context as? ComponentActivity)?.requestedOrientation =
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    }
+
     LaunchedEffect(Unit) {
         viewModel.updateWinCount()
     }
@@ -222,6 +238,11 @@ fun MultiplayerGameOverScreen(
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         IconButton(
             onClick = {
+                // Reset orientation to portrait when exiting multiplayer game over screen
+                (context as? ComponentActivity)?.requestedOrientation =
+                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+                // Navigate back to multiplayer mode selection screen
                 navController.navigate("multiplayerModeSelection") {
                     popUpTo("landingPage") { inclusive = true }
                 }
@@ -264,7 +285,9 @@ fun MultiplayerGameOverScreen(
             }
         }
     }
+
 }
+
 
 
 

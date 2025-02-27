@@ -234,9 +234,7 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         IconButton(
             onClick = {
-                navController.navigate("modeScreen/$username") {
-                    popUpTo("landingPage") { inclusive = true }
-                }
+                navController.navigate("landingPage")
             },
             modifier = Modifier.align(Alignment.TopEnd)
         ) {

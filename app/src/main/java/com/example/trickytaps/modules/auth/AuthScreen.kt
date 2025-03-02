@@ -318,11 +318,30 @@ fun firebaseAuthWithGoogle(idToken: String, navController: NavController, contex
 
                     db.collection("users").document(userId).get()
                         .addOnSuccessListener { document ->
-                            val username = document.getString("username")
-                            if (username != null) {
-                                navController.navigate("modeScreen/$username")
+                            if (document.exists()) {
+                                // User already exists, retrieve username and proceed
+                                val username = document.getString("username")
+                                if (username != null) {
+                                    navController.navigate("modeScreen/$username")
+                                } else {
+                                    navController.navigate("usernameScreen/$userId")
+                                }
                             } else {
-                                navController.navigate("usernameScreen/$userId")
+                                // New user, add email and initialize high scores
+                                val newUser = mapOf(
+                                    "email" to email,
+                                    "easy" to 0,  // Default easy mode high score
+                                    "hard" to 0  // Default hard mode high score
+                                )
+
+                                db.collection("users").document(userId)
+                                    .set(newUser)
+                                    .addOnSuccessListener {
+                                        navController.navigate("usernameScreen/$userId")
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(context, "Firestore error: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
                             }
                         }
                         .addOnFailureListener { e ->
@@ -334,6 +353,7 @@ fun firebaseAuthWithGoogle(idToken: String, navController: NavController, contex
             }
         }
 }
+
 
 
 fun getGoogleSignInClient(context: android.content.Context): GoogleSignInClient {

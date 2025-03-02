@@ -177,21 +177,20 @@ fun signUpUser(email: String, password: String, navController: NavController, co
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
 
-
-
     auth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val userId = auth.currentUser!!.uid
 
-                // Store email in Firestore before asking for a username
+                // Initialize both easy and hard high scores
                 val newUser = mapOf(
                     "email" to email,
-                    "highScore" to 0 // Default high score
+                    "easyHighScore" to 0,  // Default easy mode high score
+                    "hardHighScore" to 0   // Default hard mode high score
                 )
 
                 db.collection("users").document(userId)
-                    .set(newUser) // Store email before username setup
+                    .set(newUser, SetOptions.merge())
                     .addOnSuccessListener {
                         navController.navigate("usernameScreen/$userId")
                     }

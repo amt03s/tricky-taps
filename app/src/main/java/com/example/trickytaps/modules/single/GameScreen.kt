@@ -42,8 +42,9 @@ fun GameScreen(navController: NavController,
                initialTime: Int,
                username: String,
                db: FirebaseFirestore,
-               onVolumeChange: (Float) -> Unit // Receive volume function
-) {
+               onVolumeChange: (Float) -> Unit, // Receive volume function
+               mode: String) {
+  
     var score by remember { mutableIntStateOf(0) }
     var timeLeft by remember { mutableIntStateOf(initialTime) } // Use initialTime instead of difficulty string
     var highScore by remember { mutableIntStateOf(0) }
@@ -82,12 +83,14 @@ fun GameScreen(navController: NavController,
     }
 
     // Retrieve User's High Score from Firestore
-    LaunchedEffect(userId) {
+    LaunchedEffect(userId, mode) {
         if (userId != null) {
+            // Retrieve the high score based on the selected mode
+            val scoreType = if (mode == "easy") "easyHighScore" else "hardHighScore"
             db.collection("users").document(userId)
                 .get()
                 .addOnSuccessListener { document ->
-                    highScore = document.getLong("highScore")?.toInt() ?: 0
+                    highScore = document.getLong(scoreType)?.toInt() ?: 0
                 }
                 .addOnFailureListener {
                     println("Failed to load high score")
@@ -230,21 +233,24 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid
 
+    // Determine the mode based on `initialTime`
+    val mode = if (initialTime == 5) "easyHighScore" else "hardHighScore"
+
     // Update High Score in Firestore
     LaunchedEffect(score) {
         if (userId != null) {
             db.collection("users").document(userId)
                 .get()
                 .addOnSuccessListener { document ->
-                    val currentHighScore = document.getLong("highScore") ?: 0
+                    val currentHighScore = document.getLong(mode) ?: 0
                     if (score > currentHighScore) {
                         db.collection("users").document(userId)
-                            .update("highScore", score)
+                            .update(mode, score) // ✅ Update the correct mode score
                             .addOnSuccessListener {
-                                println("High score updated to $score")
+                                println("$mode updated to $score")
                             }
                             .addOnFailureListener { e ->
-                                println("Error updating high score: $e")
+                                println("Error updating $mode: $e")
                             }
                     }
                 }
@@ -270,8 +276,8 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(onClick = {
-                navController.navigate("gameScreen/$initialTime/$username") {
-                    popUpTo("gameScreen") { inclusive = true }
+                navController.navigate("gameScreen/$initialTime/$username/$mode") {
+                popUpTo("gameScreen") { inclusive = true }
                 }
             }) {
                 Text(text = "Play Again")
@@ -280,14 +286,16 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(onClick = {
-                navController.navigate("leaderboardScreen/$username/$score") // Navigate to Leaderboard with username & score
+                // Pass the selected mode (easy or hard) to the leaderboard screen
+                val mode = if (initialTime == 5) "easy" else "hard"
+                navController.navigate("leaderboardScreen/$username/$score/$mode")
             }) {
                 Text(text = "Show Leaderboard")
             }
+
         }
     }
 }
-
 
 @Composable
 fun RotateToLandscapeScreen(navController: NavController, playerCount: Int) {
@@ -325,20 +333,23 @@ fun RotateToLandscapeScreen(navController: NavController, playerCount: Int) {
 
 
 @Composable
-fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, username: String, score: Int) {
+fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, username: String, score: Int, mode: String) {
     var leaderboard by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var selectedMode by remember { mutableStateOf(mode) } // Default mode passed from GameOverScreen
 
-    // Fetch only the top 10 players from Firestore
-    LaunchedEffect(Unit) {
+    // Fetch only the top 10 players from Firestore based on selected mode
+    LaunchedEffect(selectedMode) {
+        val leaderboardField = if (selectedMode == "easy") "easyHighScore" else "hardHighScore"
+
         db.collection("users")
-            .orderBy("highScore", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .orderBy(leaderboardField, com.google.firebase.firestore.Query.Direction.DESCENDING)
             .limit(10) // Limit to Top 10 players
             .get()
             .addOnSuccessListener { result ->
                 val users = result.documents.mapNotNull { doc ->
                     val user = doc.getString("username") ?: "Unknown"
-                    val highScore = doc.getLong("highScore")?.toInt() ?: 0
+                    val highScore = doc.getLong(leaderboardField)?.toInt() ?: 0
                     user to highScore
                 }
                 leaderboard = users
@@ -360,12 +371,38 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
         ) {
             Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
         }
+
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
             Text(text = "Leaderboard", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Buttons to toggle between Easy and Hard mode leaderboards
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    onClick = { selectedMode = "easy" },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedMode == "easy") Color.Gray else Color.LightGray
+                    )
+                ) {
+                    Text(text = "Easy Mode")
+                }
+                Button(
+                    onClick = { selectedMode = "hard" },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedMode == "hard") Color.Gray else Color.LightGray
+                    )
+                ) {
+                    Text(text = "Hard Mode")
+                }
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             if (isLoading) {

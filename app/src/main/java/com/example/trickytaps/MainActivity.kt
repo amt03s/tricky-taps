@@ -81,13 +81,14 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             UsernameScreen(navController, userId)
         }
-        composable("leaderboardScreen/{username}/{score}") { backStackEntry ->
+        composable("leaderboardScreen/{username}/{score}/{mode}") { backStackEntry ->
             val username = backStackEntry.arguments?.getString("username") ?: "Player"
             val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
-            LeaderboardScreen(navController, FirebaseFirestore.getInstance(), username, score)
+            val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+            LeaderboardScreen(navController, FirebaseFirestore.getInstance(), username, score, mode)
         }
         composable("gameOverScreen/{username}/{score}") { backStackEntry ->
-            val initialTime= backStackEntry.arguments?.getString("initialTime") ?.toIntOrNull() ?: 0
+            val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
             val username = backStackEntry.arguments?.getString("username") ?: "Player"
             val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
             GameOverScreen(navController, username, score, FirebaseFirestore.getInstance(), initialTime)
@@ -105,13 +106,14 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
             val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
 
             GameScreen(navController = navController,
-                initialTime = initialTime,
-                username = username,
-                db = FirebaseFirestore.getInstance(),
-                onVolumeChange = { newVolume ->
-                    MediaPlayerManager.setVolume(newVolume)
-                }
-             )
+                       initialTime = initialTime,
+                       username = username,
+                       db = FirebaseFirestore.getInstance(),
+                       onVolumeChange = { newVolume ->
+                            MediaPlayerManager.setVolume(newVolume)
+                        },
+                        mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+                      )
         }
     }
 }

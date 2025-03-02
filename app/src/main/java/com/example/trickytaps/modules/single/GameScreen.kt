@@ -276,8 +276,8 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(onClick = {
-                navController.navigate("gameScreen/$initialTime/$username/$mode") {
-                    popUpTo("gameScreen") { inclusive = true } // Clears the back stack correctly
+                navController.navigate("modeScreen/$username") {
+                    popUpTo("modeScreen") { inclusive = true } // Clears the back stack correctly
                 }
             }) {
                 Text(text = "Play Again")

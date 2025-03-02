@@ -287,7 +287,8 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
 
             Button(onClick = {
                 // Pass the selected mode (easy or hard) to the leaderboard screen
-                navController.navigate("leaderboardScreen/$username/$score/$mode") // Pass mode here as well
+                navController.navigate("leaderboardScreen/$username/$score/$initialTime/$mode")
+                //navController.navigate("leaderboardScreen/$username/$score/$mode") // Pass mode here as well
             }) {
                 Text(text = "Show Leaderboard")
             }
@@ -329,9 +330,9 @@ fun RotateToLandscapeScreen(navController: NavController, playerCount: Int) {
     }
 }
 
-
 @Composable
-fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, username: String, score: Int, mode: String) {
+//fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, username: String, score: Int, mode: String) {
+fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, username: String, score: Int, initialTime: Int, mode: String) {
     var leaderboard by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var selectedMode by remember { mutableStateOf(mode) } // Default mode passed from GameOverScreen
@@ -362,8 +363,9 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
         IconButton(
             onClick = {
                 // Navigate back to GameOverScreen with the score and mode
-                navController.navigate("gameOverScreen/$username/$score/$mode") {
-                    popUpTo("leaderboardScreen") { inclusive = true } // Clears leaderboard screen
+                //navController.popBackStack() // This will navigate back safely
+                navController.navigate("gameOverScreen/$username/$score/$initialTime/$mode") {
+                    popUpTo("leaderboardScreen") { inclusive = true } // Clears the Leaderboard from stack
                 }
             },
             modifier = Modifier.align(Alignment.TopStart)

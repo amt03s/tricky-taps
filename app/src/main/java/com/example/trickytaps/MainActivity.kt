@@ -81,19 +81,38 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             UsernameScreen(navController, userId)
         }
-        composable("leaderboardScreen/{username}/{score}/{mode}") { backStackEntry ->
-            val username = backStackEntry.arguments?.getString("username") ?: "Player"
+//        composable("leaderboardScreen/{username}/{score}/{mode}") { backStackEntry ->
+//            val username = backStackEntry.arguments?.getString("username") ?: "Player"
+//            val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+//            val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+//            val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 5  // Default to 5
+//
+//            LeaderboardScreen(navController, FirebaseFirestore.getInstance(), username, score, initialTime, mode)
+//        }
+        composable("leaderboardScreen/{username}/{score}/{initialTime}/{mode}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: ""
             val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+            val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 5
             val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
-            LeaderboardScreen(navController, FirebaseFirestore.getInstance(), username, score, mode)
+
+            LeaderboardScreen(navController, FirebaseFirestore.getInstance(), username, score, initialTime, mode)
         }
-        composable("gameOverScreen/{username}/{score}") { backStackEntry ->
-            val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
+
+//        composable("gameOverScreen/{username}/{score}") { backStackEntry ->
+//            val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
+//            val username = backStackEntry.arguments?.getString("username") ?: "Player"
+//            val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+//            val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+//            GameOverScreen(navController, username, score, FirebaseFirestore.getInstance(), initialTime, mode)
+//        }
+        composable("gameOverScreen/{username}/{score}/{initialTime}/{mode}") { backStackEntry ->
             val username = backStackEntry.arguments?.getString("username") ?: "Player"
             val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+            val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
             val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
             GameOverScreen(navController, username, score, FirebaseFirestore.getInstance(), initialTime, mode)
         }
+
         composable("help") {
             Help(navController)
         }

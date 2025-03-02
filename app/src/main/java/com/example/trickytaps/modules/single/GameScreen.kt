@@ -82,7 +82,7 @@ fun GameScreen(navController: NavController,
     LaunchedEffect(userId, mode) {
         if (userId != null) {
             // Retrieve the high score based on the selected mode
-            val scoreType = if (mode == "easy") "easyHighScore" else "hardHighScore"
+            val scoreType = if (mode == "easy") "easy" else "hard"
             db.collection("users").document(userId)
                 .get()
                 .addOnSuccessListener { document ->
@@ -357,7 +357,7 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
 
     // Fetch only the top 10 players from Firestore based on selected mode
     LaunchedEffect(selectedMode) {
-        val leaderboardField = if (selectedMode == "easy") "easyHighScore" else "hardHighScore"
+        val leaderboardField = if (selectedMode == "easy") "easy" else "hard"
 
         db.collection("users")
             .orderBy(leaderboardField, com.google.firebase.firestore.Query.Direction.DESCENDING)

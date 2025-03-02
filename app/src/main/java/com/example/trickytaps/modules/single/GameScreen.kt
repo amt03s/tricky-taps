@@ -173,8 +173,26 @@ fun GameScreen(navController: NavController,
                             .background(Color.Gray)
                             .clickable {
                                 if (option == currentQuestion.correctAnswer) {
-                                    score += 10
-                                    mediaPlayerRight.start() // Play correct answer sound
+                                    if (timeLeft == 5){
+                                        score += 50
+                                        mediaPlayerRight.start()
+                                    }
+                                    else if (timeLeft == 4){
+                                        score += 40
+                                        mediaPlayerRight.start()
+                                    }
+                                    else if (timeLeft == 3){
+                                        score += 30
+                                        mediaPlayerRight.start()
+                                    }
+                                    else if (timeLeft == 20){
+                                        score += 40
+                                        mediaPlayerRight.start()
+                                    }
+                                    else{
+                                        score += 10
+                                        mediaPlayerRight.start() // Play correct answer sound
+                                    }
                                 } else {
                                     mediaPlayerWrong.start() // Play wrong answer sound
                                 }

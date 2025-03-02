@@ -2,6 +2,7 @@
 package com.example.trickytaps.modules.multi
 
 import android.content.pm.ActivityInfo
+import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,17 +18,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.trickytaps.MediaPlayerManager
+import com.example.trickytaps.R
 import com.example.trickytaps.TrickQuestion
 import com.example.trickytaps.generateTrickQuestion
 import com.example.trickytaps.modules.single.PauseDialog
@@ -39,14 +42,20 @@ class MultiplayerActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val viewModel: MultiplayerViewModel = viewModel()
+            val onVolumeChange = { newVolume: Float ->
+                MediaPlayerManager.setVolume(newVolume)
+            }
 
-            MultiplayerScreen(navController = navController, viewModel = viewModel)
+            MultiplayerScreen(navController = navController, viewModel = viewModel, onVolumeChange = onVolumeChange)
         }
     }
 }
 
 @Composable
-fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewModel) {
+fun MultiplayerScreen(navController: NavController,
+                      viewModel: MultiplayerViewModel,
+                      onVolumeChange: (Float) -> Unit // Receive volume function
+) {
     val playerNames by viewModel.playerNames.collectAsState()
     val scores by viewModel.scores.collectAsState()
     val playerCount by viewModel.playerCount.collectAsState() // Retrieve player count correctly
@@ -61,6 +70,24 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
     val context = LocalContext.current
+    val mediaPlayerRight = remember { MediaPlayer.create(context, R.raw.right) }
+    val mediaPlayerWrong = remember { MediaPlayer.create(context, R.raw.wrong) }
+    val mediaPlayerOver = remember { MediaPlayer.create(context, R.raw.over) }
+
+    //var volumeLevel by remember { mutableStateOf(1f) } // Default max volume
+
+    var sfxVolume by remember { mutableStateOf(1f) }  // Default volume for sound effects
+    var bgmVolume by remember { mutableStateOf(1f) }  // Default volume for background music
+
+    LaunchedEffect(sfxVolume) {
+        mediaPlayerRight.setVolume(sfxVolume, sfxVolume)
+        mediaPlayerWrong.setVolume(sfxVolume, sfxVolume)
+    }
+
+    LaunchedEffect(bgmVolume) {
+        onVolumeChange(bgmVolume) // Update BGM volume in MainActivity
+    }
+
     DisposableEffect(Unit) {
         // Lock the orientation to landscape when entering this screen
         (context as? ComponentActivity)?.requestedOrientation =
@@ -82,7 +109,10 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
             delay(1000L)
             timeLeft--
         }
-        if (timeLeft == 0) gameOver = true
+        if (timeLeft == 0) {
+            mediaPlayerOver.start()
+            gameOver = true
+        }
     }
 
     if (gameOver) {
@@ -90,40 +120,26 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
     } else {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-//                if (isPaused) {
-//                    Box(
-//                        modifier = Modifier.fillMaxSize(),
-//                        contentAlignment = Alignment.Center
-//                    ) {
-//                        Text(
-//                            text = "Rotate your device back to Landscape to continue!",
-//                            fontSize = 24.sp,
-//                            fontWeight = FontWeight.Bold,
-//                            textAlign = TextAlign.Center,
-//                            color = Color.Red
-//                        )
-//                    }
-//                } else {
-                    Text(
-                        text = "Time Left: $timeLeft",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Time Left: $timeLeft",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = buildAnnotatedString {
+                        val questionText = currentQuestion.value.question
+                        val colorText = questionText.substringAfter("**").substringBefore("**") // Extracts the word to be colored
+                        val colorStartIndex = questionText.indexOf(colorText)
 
-                    Text(
-                        text = buildAnnotatedString {
-                            val questionText = currentQuestion.value.question
-                            val colorText = questionText.substringAfter("**").substringBefore("**") // Extracts the word to be colored
-                            val colorStartIndex = questionText.indexOf(colorText)
-
-                            append(questionText)
-
-                            if (colorStartIndex != -1) {
+                        append(questionText)
+                        if (colorStartIndex != -1) {
                                 addStyle(
                                     style = SpanStyle(color = currentQuestion.value.displayedColor),
                                     start = colorStartIndex,
@@ -166,7 +182,9 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
                                                 index,
                                                 currentQuestion,
                                                 viewModel,
-                                                isPortrait
+                                                isPortrait,
+                                                mediaPlayerRight,
+                                                mediaPlayerWrong
                                             )
                                         }
                                     }
@@ -182,7 +200,9 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
                     isPaused = !isPaused
                     showPauseDialog = true
                 },
-                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
@@ -199,9 +219,10 @@ fun MultiplayerScreen(navController: NavController, viewModel: MultiplayerViewMo
                     showPauseDialog = false
                     isPaused = false
                 },
-                onToggleMute = {
-                    // Handle mute logic here
-                }
+                onBgmVolumeChange = { newVolume -> bgmVolume = newVolume },
+                onSfxVolumeChange = { newVolume -> sfxVolume = newVolume },
+                bgmVolume = bgmVolume,
+                sfxVolume = sfxVolume
             )
         }
     }
@@ -213,7 +234,9 @@ fun AnswerButton(
     playerIndex: Int,
     currentQuestion: MutableState<TrickQuestion>,
     viewModel: MultiplayerViewModel,
-    isPortrait: Boolean
+    isPortrait: Boolean,
+    mediaPlayerRight: MediaPlayer,
+    mediaPlayerWrong: MediaPlayer
 ) {
     // Get player name safely
     val playerNames = viewModel.playerNames.collectAsState().value
@@ -227,7 +250,10 @@ fun AnswerButton(
             .background(Color.Gray, shape = RoundedCornerShape(8.dp))
             .clickable {
                 if (option == currentQuestion.value.correctAnswer) {
+                    mediaPlayerRight.start()
                     viewModel.updateScore(playerName)
+                } else {
+                    mediaPlayerWrong.start()
                 }
                 currentQuestion.value = generateTrickQuestion() // Load new question
             }
@@ -300,7 +326,9 @@ fun MultiplayerGameOverScreen(
 
     val winCounts by viewModel.winCounts.collectAsState() // Get updated win counts
 
-    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
         IconButton(
             onClick = handleExitClick, // Exit action
             modifier = Modifier.align(Alignment.TopEnd)
@@ -308,7 +336,9 @@ fun MultiplayerGameOverScreen(
             Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Back")
         }
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {

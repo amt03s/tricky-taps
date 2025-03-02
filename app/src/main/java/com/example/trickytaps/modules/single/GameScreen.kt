@@ -2,6 +2,7 @@
 package com.example.trickytaps.modules.single
 
 import android.content.pm.ActivityInfo
+import android.media.MediaPlayer
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,7 +14,10 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PlayCircleFilled
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,12 +34,19 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import com.example.trickytaps.R
 import com.example.trickytaps.generateTrickQuestion
 
 @Composable
-fun GameScreen(navController: NavController, initialTime: Int, username: String, db: FirebaseFirestore, mode: String) {
+fun GameScreen(navController: NavController,
+               initialTime: Int,
+               username: String,
+               db: FirebaseFirestore,
+               onVolumeChange: (Float) -> Unit, // Receive volume function
+               mode: String) {
+  
     var score by remember { mutableIntStateOf(0) }
-    var timeLeft by remember { mutableIntStateOf(initialTime) } // Use `initialTime` instead of difficulty string
+    var timeLeft by remember { mutableIntStateOf(initialTime) } // Use initialTime instead of difficulty string
     var highScore by remember { mutableIntStateOf(0) }
     var gameOver by remember { mutableStateOf(false) }
     var currentQuestion by remember { mutableStateOf(generateTrickQuestion()) }
@@ -47,10 +58,25 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
     val userId = auth.currentUser?.uid
 
     val context = LocalContext.current
+    val mediaPlayerRight = remember { MediaPlayer.create(context, R.raw.right) }
+    val mediaPlayerWrong = remember { MediaPlayer.create(context, R.raw.wrong) }
+    val mediaPlayerOver = remember { MediaPlayer.create(context, R.raw.over) }
+
+    var sfxVolume by remember { mutableStateOf(1f) }  // Default full volume for sound effects
+    var bgmVolume by remember { mutableStateOf(1f) }  // Default full volume for background music
+
+    LaunchedEffect(sfxVolume) {
+        mediaPlayerRight.setVolume(sfxVolume, sfxVolume)
+        mediaPlayerWrong.setVolume(sfxVolume, sfxVolume)
+    }
+
+    LaunchedEffect(bgmVolume) {
+        onVolumeChange(bgmVolume) // Update BGM volume in MainActivity
+    }
+
     LaunchedEffect(true) {
         (context as? ComponentActivity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
-
 
     LaunchedEffect(initialTime) {
         timeLeft = initialTime
@@ -118,12 +144,7 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(text = "Score: $score", fontSize = 20.sp)
-//                Text(
-//                    text = "Question ${questionCount + 1} of 10",
-//                    fontSize = 18.sp
-//                ) // Show progress
                 Spacer(modifier = Modifier.height(32.dp))
-
                 // Display Trick Question
                 Text(
                     text = buildAnnotatedString {
@@ -157,6 +178,9 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
                             .clickable {
                                 if (option == currentQuestion.correctAnswer) {
                                     score += 10
+                                    mediaPlayerRight.start() // Play correct answer sound
+                                } else {
+                                    mediaPlayerWrong.start() // Play wrong answer sound
                                 }
 
                                 if (questionCount < 10) {
@@ -165,6 +189,7 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
                                     questionCount++
                                 } else {
                                     gameOver = true
+                                    mediaPlayerOver.start()
                                 }
                             }
                             .padding(16.dp),
@@ -190,17 +215,14 @@ fun GameScreen(navController: NavController, initialTime: Int, username: String,
                 )
             }
         }
-
-        // Show Pause Dialog if paused
         if (showPauseDialog) {
             PauseDialog(
-                onResume = {
-                    showPauseDialog = false
-                    paused = false
-                },
-                onToggleMute = {
-                    // Handle mute logic here
-                }
+                onResume = { showPauseDialog = false
+                    paused = false},
+                onBgmVolumeChange = { newVolume -> bgmVolume = newVolume },
+                onSfxVolumeChange = { newVolume -> sfxVolume = newVolume },
+                bgmVolume = bgmVolume,
+                sfxVolume = sfxVolume
             )
         }
     }
@@ -476,20 +498,68 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
     }
 }
 
+// Pause Dialog with Two Volume Sliders
 @Composable
-fun PauseDialog(onResume: () -> Unit, onToggleMute: () -> Unit) {
+fun PauseDialog(
+    onResume: () -> Unit,
+    onBgmVolumeChange: (Float) -> Unit,
+    onSfxVolumeChange: (Float) -> Unit,
+    bgmVolume: Float,
+    sfxVolume: Float
+) {
     AlertDialog(
         onDismissRequest = { onResume() },
-        title = { Text(text = "Game Paused") },
-        text = { Text(text = "Would you like to resume the game?") },
         confirmButton = {
-            Button(onClick = onResume) {
-                Text("Resume")
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(onClick = { onResume() }) {
+                    Icon(
+                        imageVector = Icons.Default.PlayCircleFilled,
+                        contentDescription = "Resume",
+                        modifier = Modifier.size(100.dp)
+                    )
+                }
             }
         },
-        dismissButton = {
-            Button(onClick = onToggleMute) {
-                Text("Toggle Mute")
+        title = { Text("Game Paused") },
+        text = {
+            Column {
+                // Background Music Slider
+                Row{
+                    IconButton(onClick = {})
+                    {
+                        Icon(
+                            imageVector = Icons.Default.VolumeUp,
+                            contentDescription = "music",
+                            modifier = Modifier.size(100.dp)
+                        )
+                    }
+                    Slider(
+                        value = bgmVolume,
+                        onValueChange = onBgmVolumeChange,
+                        valueRange = 0f..1f,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+
+                Row{
+                    IconButton(onClick = {})
+                    {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = "music",
+                            modifier = Modifier.size(100.dp)
+                        )
+                    }
+                    Slider(
+                        value = sfxVolume,
+                        onValueChange = onSfxVolumeChange,
+                        valueRange = 0f..1f,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
             }
         }
     )

@@ -2,6 +2,7 @@
 package com.example.trickytaps
 
 import android.content.pm.ActivityInfo
+import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,19 +28,36 @@ import com.example.trickytaps.ui.theme.TrickyTapsTheme
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
+    private var mediaPlayer: MediaPlayer? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            MediaPlayerManager.initialize(this) // Initialize once
             val viewModel: MultiplayerViewModel = viewModel()
             TrickyTapsTheme {
-                AppNavigation(viewModel)
+                AppNavigation(viewModel, ::setMusicVolume) // Pass function as a parameter
             }
         }
+    }
+    private fun startBackgroundMusic() {
+        mediaPlayer = MediaPlayer.create(this, R.raw.loop).apply {
+            isLooping = true // Ensure the sound loops
+            start()
+        }
+    }
+    fun setMusicVolume(volume: Float) {
+        mediaPlayer?.setVolume(volume, volume) // Set left and right volume
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release() // Release MediaPlayer when activity is destroyed
+        mediaPlayer = null
     }
 }
 
 @Composable
-fun AppNavigation(viewModel: MultiplayerViewModel) {
+fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Unit) {
     val navController = rememberNavController()
 
     NavHost(navController, startDestination = "landingPage") {
@@ -54,7 +72,9 @@ fun AppNavigation(viewModel: MultiplayerViewModel) {
             RotateToLandscapeScreen(navController, playerCount)
         }
         composable("multiplayerScreen/{playerCount}") {
-            MultiplayerScreen(navController, viewModel) // Pass viewModel
+            MultiplayerScreen(navController, viewModel, onVolumeChange = { newVolume ->
+                MediaPlayerManager.setVolume(newVolume)
+            }) // Pass viewModel
         }
         composable("authScreen") { AuthScreen(navController) }
         composable("usernameScreen/{userId}") { backStackEntry ->
@@ -84,7 +104,16 @@ fun AppNavigation(viewModel: MultiplayerViewModel) {
         composable("gameScreen/{initialTime}/{username}") { backStackEntry ->
             val username = backStackEntry.arguments?.getString("username") ?: ""
             val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
-            GameScreen(navController = navController, initialTime = initialTime, username = username, db = FirebaseFirestore.getInstance(), mode = backStackEntry.arguments?.getString("mode") ?: "easy")
+
+            GameScreen(navController = navController,
+                       initialTime = initialTime,
+                       username = username,
+                       db = FirebaseFirestore.getInstance(),
+                       onVolumeChange = { newVolume ->
+                            MediaPlayerManager.setVolume(newVolume)
+                        },
+                        mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+                      )
         }
     }
 }

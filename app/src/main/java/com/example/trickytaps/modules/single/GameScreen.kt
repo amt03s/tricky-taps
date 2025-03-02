@@ -44,9 +44,9 @@ fun GameScreen(navController: NavController,
                db: FirebaseFirestore,
                onVolumeChange: (Float) -> Unit, // Receive volume function
                mode: String) {
-  
+
     var score by remember { mutableIntStateOf(0) }
-    var timeLeft by remember { mutableIntStateOf(initialTime) } // Use initialTime instead of difficulty string
+    var timeLeft by remember { mutableStateOf(initialTime) } // Use initialTime instead of difficulty string
     var highScore by remember { mutableIntStateOf(0) }
     var gameOver by remember { mutableStateOf(false) }
     var currentQuestion by remember { mutableStateOf(generateTrickQuestion()) }
@@ -78,10 +78,6 @@ fun GameScreen(navController: NavController,
         (context as? ComponentActivity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 
-    LaunchedEffect(initialTime) {
-        timeLeft = initialTime
-    }
-
     // Retrieve User's High Score from Firestore
     LaunchedEffect(userId, mode) {
         if (userId != null) {
@@ -102,23 +98,23 @@ fun GameScreen(navController: NavController,
     LaunchedEffect(timeLeft, paused) {
         while (timeLeft > 0 && !paused && !gameOver) {
             delay(1000L)
-            timeLeft--
+            timeLeft--  // Decrease timeLeft every second
         }
 
         if (timeLeft == 0 && !gameOver) {
             if (questionCount < 9) {
-                // Move to next question
                 currentQuestion = generateTrickQuestion()
-                timeLeft = initialTime // Reset timer for next question
-                questionCount++
+                timeLeft = initialTime // Reset the timer to initialTime
+                questionCount++  // Move to next question
             } else {
-                gameOver = true // End game after 10 questions
+                gameOver = true
+                mediaPlayerOver.start()  // Play end of game sound
             }
         }
     }
 
     if (gameOver) {
-        GameOverScreen(score = score, navController = navController, username = username, db = db, initialTime = initialTime)
+        GameOverScreen(score = score, navController = navController, username = username, db = db, initialTime = initialTime, mode = mode)
     } else {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -215,10 +211,14 @@ fun GameScreen(navController: NavController,
                 )
             }
         }
+
+        // Show Pause Dialog if paused
         if (showPauseDialog) {
             PauseDialog(
-                onResume = { showPauseDialog = false
-                    paused = false},
+                onResume = {
+                    showPauseDialog = false
+                    paused = false
+                },
                 onBgmVolumeChange = { newVolume -> bgmVolume = newVolume },
                 onSfxVolumeChange = { newVolume -> sfxVolume = newVolume },
                 bgmVolume = bgmVolume,
@@ -229,12 +229,12 @@ fun GameScreen(navController: NavController,
 }
 
 @Composable
-fun GameOverScreen(navController: NavController, username: String, score: Int, db: FirebaseFirestore, initialTime: Int) {
+fun GameOverScreen(navController: NavController, username: String, score: Int, db: FirebaseFirestore, initialTime: Int, mode: String) {
     val auth = FirebaseAuth.getInstance()
     val userId = auth.currentUser?.uid
 
-    // Determine the mode based on `initialTime`
-    val mode = if (initialTime == 5) "easyHighScore" else "hardHighScore"
+    // Determine the mode based on initialTime
+    val mode = if (initialTime == 5) "easy" else "hard"
 
     // Update High Score in Firestore
     LaunchedEffect(score) {
@@ -245,7 +245,7 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
                     val currentHighScore = document.getLong(mode) ?: 0
                     if (score > currentHighScore) {
                         db.collection("users").document(userId)
-                            .update(mode, score) // ✅ Update the correct mode score
+                            .update(mode, score) // Update the correct mode score
                             .addOnSuccessListener {
                                 println("$mode updated to $score")
                             }
@@ -277,7 +277,7 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
 
             Button(onClick = {
                 navController.navigate("gameScreen/$initialTime/$username/$mode") {
-                popUpTo("gameScreen") { inclusive = true }
+                    popUpTo("gameScreen") { inclusive = true } // Clears the back stack correctly
                 }
             }) {
                 Text(text = "Play Again")
@@ -287,12 +287,10 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
 
             Button(onClick = {
                 // Pass the selected mode (easy or hard) to the leaderboard screen
-                val mode = if (initialTime == 5) "easy" else "hard"
-                navController.navigate("leaderboardScreen/$username/$score/$mode")
+                navController.navigate("leaderboardScreen/$username/$score/$mode") // Pass mode here as well
             }) {
                 Text(text = "Show Leaderboard")
             }
-
         }
     }
 }
@@ -363,8 +361,9 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         IconButton(
             onClick = {
-                navController.navigate("gameOverScreen/$username/$score") {
-                    popUpTo("leaderboardScreen") { inclusive = true }
+                // Navigate back to GameOverScreen with the score and mode
+                navController.navigate("gameOverScreen/$username/$score/$mode") {
+                    popUpTo("leaderboardScreen") { inclusive = true } // Clears leaderboard screen
                 }
             },
             modifier = Modifier.align(Alignment.TopStart)

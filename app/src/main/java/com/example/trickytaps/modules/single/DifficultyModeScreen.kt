@@ -1,4 +1,3 @@
-// DifficultyModeScreen.kt
 package com.example.trickytaps.modules.single
 
 import android.content.pm.ActivityInfo
@@ -54,7 +53,7 @@ fun DifficultyModeScreen(navController: NavController, username: String){
             ) {
                 Button(
                     onClick = {
-                        navController.navigate("gameScreen/5/$username")
+                        navController.navigate("gameScreen/5/$username/easy") // Pass easy mode
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                     modifier = Modifier.fillMaxWidth(0.6f)
@@ -62,12 +61,11 @@ fun DifficultyModeScreen(navController: NavController, username: String){
                     Text(text = "Easy", fontSize = 18.sp, color = Color.White)
                 }
 
-
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
                     onClick = {
-                        navController.navigate("gameScreen/3/$username")
+                        navController.navigate("gameScreen/3/$username/hard") // Pass hard mode
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                     modifier = Modifier.fillMaxWidth(0.6f)

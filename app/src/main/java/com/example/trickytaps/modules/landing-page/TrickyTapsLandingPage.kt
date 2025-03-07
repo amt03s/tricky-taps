@@ -1,12 +1,10 @@
 //TrickyTapsLandingPage.kt
-package com.example.trickytaps.modules.auth
+package com.example.trickytaps.modules.`landing-page`
 
 import android.content.pm.ActivityInfo
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,13 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
-fun TrickyTapsLandingPage(navController: NavController) {
+fun TrickyTapsLandingPage(navController: NavController,db: FirebaseFirestore, username: String, score: Int, initialTime: Int, mode: String) {
     val context = LocalContext.current
     LaunchedEffect(true) {
         (context as? ComponentActivity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -67,6 +65,16 @@ fun TrickyTapsLandingPage(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(0.6f)
             ) {
                 Text(text = "Multiplayer", fontSize = 18.sp, color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            Button(
+                onClick = { navController.navigate("leaderboardScreen/$username/$score/$initialTime/$mode") },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                modifier = Modifier.fillMaxWidth(0.6f)
+            ) {
+                Text(text = "Show Leaderboards", fontSize = 18.sp, color = Color.White)
             }
         }
     }

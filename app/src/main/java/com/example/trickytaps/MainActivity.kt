@@ -1,7 +1,6 @@
 // MainActivity.kt
 package com.example.trickytaps
 
-import android.content.pm.ActivityInfo
 import android.media.MediaPlayer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -13,9 +12,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.trickytaps.modules.auth.AuthScreen
-import com.example.trickytaps.modules.auth.Help
-import com.example.trickytaps.modules.auth.TrickyTapsLandingPage
 import com.example.trickytaps.modules.auth.UsernameScreen
+import com.example.trickytaps.modules.`landing-page`.Help
+import com.example.trickytaps.modules.`landing-page`.TrickyTapsLandingPage
 import com.example.trickytaps.modules.multi.MultiplayerModeSelectionScreen
 import com.example.trickytaps.modules.multi.MultiplayerScreen
 import com.example.trickytaps.modules.multi.MultiplayerViewModel
@@ -61,8 +60,12 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
     val navController = rememberNavController()
 
     NavHost(navController, startDestination = "landingPage") {
-        composable("landingPage") {
-            TrickyTapsLandingPage(navController)
+        composable("landingPage") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: ""
+            val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+            val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 5
+            val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+            TrickyTapsLandingPage(navController, FirebaseFirestore.getInstance(), username, score, initialTime, mode)
         }
         composable("multiplayerModeSelection") {
             MultiplayerModeSelectionScreen(navController, viewModel) // Pass ViewModel
@@ -142,5 +145,5 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
 @Composable
 fun MainScreenPreview() {
     val navController = rememberNavController()
-    TrickyTapsLandingPage(navController)
+    //TrickyTapsLandingPage(navController)
 }

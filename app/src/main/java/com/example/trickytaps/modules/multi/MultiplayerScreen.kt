@@ -222,7 +222,8 @@ fun MultiplayerScreen(navController: NavController,
                 onBgmVolumeChange = { newVolume -> bgmVolume = newVolume },
                 onSfxVolumeChange = { newVolume -> sfxVolume = newVolume },
                 bgmVolume = bgmVolume,
-                sfxVolume = sfxVolume
+                sfxVolume = sfxVolume,
+                navController = navController
             )
         }
     }

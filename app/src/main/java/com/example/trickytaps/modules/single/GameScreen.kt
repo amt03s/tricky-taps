@@ -240,7 +240,8 @@ fun GameScreen(navController: NavController,
                 onBgmVolumeChange = { newVolume -> bgmVolume = newVolume },
                 onSfxVolumeChange = { newVolume -> sfxVolume = newVolume },
                 bgmVolume = bgmVolume,
-                sfxVolume = sfxVolume
+                sfxVolume = sfxVolume,
+                navController = navController
             )
         }
     }
@@ -381,7 +382,7 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
         IconButton(
             onClick = {
                 // Navigate back to GameOverScreen with the score and mode
-                //navController.popBackStack() // This will navigate back safely
+//                navController.popBackStack() // This will navigate back safely
                 navController.navigate("gameOverScreen/$username/$score/$initialTime/$mode") {
                     popUpTo("leaderboardScreen") { inclusive = true } // Clears the Leaderboard from stack
                 }
@@ -524,7 +525,8 @@ fun PauseDialog(
     onBgmVolumeChange: (Float) -> Unit,
     onSfxVolumeChange: (Float) -> Unit,
     bgmVolume: Float,
-    sfxVolume: Float
+    sfxVolume: Float,
+    navController: NavController
 ) {
     AlertDialog(
         onDismissRequest = { onResume() },
@@ -533,13 +535,25 @@ fun PauseDialog(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                IconButton(onClick = { onResume() }) {
-                    Icon(
-                        imageVector = Icons.Default.PlayCircleFilled,
-                        contentDescription = "Resume",
-                        modifier = Modifier.size(100.dp)
-                    )
+                Row{
+                    IconButton(onClick = { navController.navigate("landingPage") }) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Quit",
+                            modifier = Modifier.size(100.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+                    IconButton(onClick = { onResume() }) {
+                        Icon(
+                            imageVector = Icons.Default.PlayCircleFilled,
+                            contentDescription = "Resume",
+                            modifier = Modifier.size(100.dp)
+                        )
+                    }
                 }
+
             }
         },
         title = { Text("Game Paused") },

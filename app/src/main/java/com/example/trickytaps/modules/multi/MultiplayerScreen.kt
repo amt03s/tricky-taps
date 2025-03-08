@@ -35,6 +35,10 @@ import com.example.trickytaps.TrickQuestion
 import com.example.trickytaps.generateTrickQuestion
 import com.example.trickytaps.modules.single.PauseDialog
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Arrangement
+
 
 class MultiplayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -171,21 +175,56 @@ fun MultiplayerScreen(navController: NavController,
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 val options = currentQuestion.value.options.chunked(2)
+//                                options.forEach { rowOptions ->
+//                                    Row(
+//                                        modifier = Modifier.fillMaxWidth(),
+//                                        horizontalArrangement = Arrangement.SpaceEvenly
+//                                    ) {
+//                                        rowOptions.forEach { option ->
+//                                            AnswerButton(
+//                                                option,
+//                                                index,
+//                                                currentQuestion,
+//                                                viewModel,
+//                                                isPortrait,
+//                                                mediaPlayerRight,
+//                                                mediaPlayerWrong
+//                                            )
+//                                        }
+//                                    }
+//                                }
+                                // Inside MultiplayerScreen where options are generated
                                 options.forEach { rowOptions ->
                                     Row(
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceEvenly
                                     ) {
                                         rowOptions.forEach { option ->
-                                            AnswerButton(
-                                                option,
-                                                index,
-                                                currentQuestion,
-                                                viewModel,
-                                                isPortrait,
-                                                mediaPlayerRight,
-                                                mediaPlayerWrong
-                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f) // Equal size for each button
+                                                    .height(60.dp)
+                                                    .padding(4.dp)
+                                                    .background(Color.Gray, shape = RoundedCornerShape(8.dp))
+                                                    .clickable {
+                                                        if (option == currentQuestion.value.correctAnswer) {
+                                                            mediaPlayerRight.start()
+                                                            viewModel.updateScore(playerNames[index])
+                                                        } else {
+                                                            mediaPlayerWrong.start()
+                                                        }
+                                                        currentQuestion.value = generateTrickQuestion()
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = option,
+                                                    fontSize = 18.sp,
+                                                    color = Color.White,
+                                                    textAlign = TextAlign.Center
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -229,41 +268,41 @@ fun MultiplayerScreen(navController: NavController,
     }
 }
 
-@Composable
-fun AnswerButton(
-    option: String,
-    playerIndex: Int,
-    currentQuestion: MutableState<TrickQuestion>,
-    viewModel: MultiplayerViewModel,
-    isPortrait: Boolean,
-    mediaPlayerRight: MediaPlayer,
-    mediaPlayerWrong: MediaPlayer
-) {
-    // Get player name safely
-    val playerNames = viewModel.playerNames.collectAsState().value
-    val playerName = playerNames.getOrNull(playerIndex) ?: "Unknown Player" // Avoid crashes
-
-    Box(
-        modifier = Modifier
-            .width(if (isPortrait) 250.dp else 160.dp)
-            .height(60.dp)
-            .padding(4.dp)
-            .background(Color.Gray, shape = RoundedCornerShape(8.dp))
-            .clickable {
-                if (option == currentQuestion.value.correctAnswer) {
-                    mediaPlayerRight.start()
-                    viewModel.updateScore(playerName)
-                } else {
-                    mediaPlayerWrong.start()
-                }
-                currentQuestion.value = generateTrickQuestion() // Load new question
-            }
-            .padding(12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = option, fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center)
-    }
-}
+//@Composable
+//fun AnswerButton(
+//    option: String,
+//    playerIndex: Int,
+//    currentQuestion: MutableState<TrickQuestion>,
+//    viewModel: MultiplayerViewModel,
+//    isPortrait: Boolean,
+//    mediaPlayerRight: MediaPlayer,
+//    mediaPlayerWrong: MediaPlayer
+//) {
+//    // Get player name safely
+//    val playerNames = viewModel.playerNames.collectAsState().value
+//    val playerName = playerNames.getOrNull(playerIndex) ?: "Unknown Player" // Avoid crashes
+//
+////    Box(
+////        modifier = Modifier
+////            .width(if (isPortrait) 250.dp else 160.dp)
+////            .height(60.dp)
+////            .padding(4.dp)
+////            .background(Color.Gray, shape = RoundedCornerShape(8.dp))
+////            .clickable {
+////                if (option == currentQuestion.value.correctAnswer) {
+////                    mediaPlayerRight.start()
+////                    viewModel.updateScore(playerName)
+////                } else {
+////                    mediaPlayerWrong.start()
+////                }
+////                currentQuestion.value = generateTrickQuestion() // Load new question
+////            }
+////            .padding(12.dp),
+////        contentAlignment = Alignment.Center
+////    ) {
+////        Text(text = option, fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center)
+////    }
+//}
 
 @Composable
 fun MultiplayerGameOverScreen(

@@ -69,4 +69,7 @@ dependencies {
     implementation (libs.firebase.auth.ktx.v2210)
     implementation (libs.firebase.firestore.ktx.v2491)
     implementation ("com.google.android.gms:play-services-auth:21.3.0")
+
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt:coil-gif:2.4.0") // Add GIF support
 }

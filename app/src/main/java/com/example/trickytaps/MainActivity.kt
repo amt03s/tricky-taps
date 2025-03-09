@@ -11,6 +11,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -87,19 +88,15 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .height(240.dp) // Adjust size as needed
-                        .width(360.dp)  // Adjust size as needed
+                        .weight(1f) // Makes each GIF take equal height within the available space
+                        .fillMaxWidth() // Stretches to fill the width of the screen
                         .graphicsLayer {
                             alpha = 0.5f // Adjust opacity if needed
-                            // Flip the second GIF horizontally
-                            if (index == 1) {
-                                scaleX = -1f
-                            }
+                            if (index == 1) scaleX = -1f // Flip the second GIF horizontally
                         }
                 )
             }
         }
-
 
         NavHost(navController, startDestination = "landingPage") {
             composable("landingPage") { backStackEntry ->

@@ -369,7 +369,6 @@ fun RotateToLandscapeScreen(navController: NavController, playerCount: Int) {
 }
 
 @Composable
-//fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, username: String, score: Int, mode: String) {
 fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, username: String, score: Int, initialTime: Int, mode: String) {
     var leaderboard by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -400,8 +399,6 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         IconButton(
             onClick = {
-                // Navigate back to GameOverScreen with the score and mode
-//                navController.popBackStack() // This will navigate back safely
                 navController.navigate("gameOverScreen/$username/$score/$initialTime/$mode") {
                     popUpTo("leaderboardScreen") { inclusive = true } // Clears the Leaderboard from stack
                 }

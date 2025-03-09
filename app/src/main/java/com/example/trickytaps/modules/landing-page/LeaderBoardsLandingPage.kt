@@ -75,8 +75,6 @@ fun LeaderBoardsLandingPage(navController: NavController, db: FirebaseFirestore,
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         IconButton(
             onClick = {
-                // Navigate back to GameOverScreen with the score and mode
-//                navController.popBackStack() // This will navigate back safely
                 navController.navigate("landingPage")
             },
             modifier = Modifier.align(Alignment.TopStart)
@@ -204,7 +202,6 @@ fun LeaderBoardsLandingPage(navController: NavController, db: FirebaseFirestore,
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(20.dp))
         }
     }

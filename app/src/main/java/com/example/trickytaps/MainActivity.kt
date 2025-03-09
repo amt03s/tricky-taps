@@ -31,6 +31,7 @@ import com.example.trickytaps.modules.auth.AuthScreen
 import com.example.trickytaps.modules.auth.UsernameScreen
 import com.example.trickytaps.modules.`landing-page`.Help
 import com.example.trickytaps.modules.`landing-page`.TrickyTapsLandingPage
+import com.example.trickytaps.modules.landingpage.LeaderBoardsLandingPage
 import com.example.trickytaps.modules.multi.MultiplayerModeSelectionScreen
 import com.example.trickytaps.modules.multi.MultiplayerScreen
 import com.example.trickytaps.modules.multi.MultiplayerViewModel
@@ -76,22 +77,6 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Unit) {
     val navController = rememberNavController()
     Box(modifier = Modifier.fillMaxSize()) {
-//        Column(modifier = Modifier.fillMaxSize()) {
-//            repeat(3) {
-//                AsyncImage(
-//                    model = ImageRequest.Builder(LocalContext.current)
-//                        .data(R.drawable.bg)
-//                        .decoderFactory(ImageDecoderDecoder.Factory())
-//                        .build(),
-//                    contentDescription = null,
-//                    contentScale = ContentScale.Crop,
-//                    modifier = Modifier
-//                        .height(240.dp) // Adjust size as needed
-//                        .width(360.dp)  // Adjust size as needed
-//                        .graphicsLayer { alpha = 0.5f } // Adjust opacity if needed
-//                )
-//            }
-//        }
         Column(modifier = Modifier.fillMaxSize()) {
             repeat(3) { index ->
                 AsyncImage(
@@ -157,6 +142,23 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
                 val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
 
                 LeaderboardScreen(
+                    navController,
+                    FirebaseFirestore.getInstance(),
+                    username,
+                    score,
+                    initialTime,
+                    mode
+                )
+            }
+
+            composable("leaderboardScreen") { backStackEntry ->
+                val username = backStackEntry.arguments?.getString("username") ?: ""
+                val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+                val initialTime =
+                    backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 5
+                val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+
+                LeaderBoardsLandingPage(
                     navController,
                     FirebaseFirestore.getInstance(),
                     username,

@@ -181,7 +181,7 @@ fun GameScreen(navController: NavController,
                                 if (selectedAnswer == option) {
                                     if (correctAnswer == true) Color.Green.copy(alpha = 0.2f)
                                     else Color.Red.copy(alpha = 0.2f)
-                                } else Color.Gray
+                                } else Color.Gray, shape = RoundedCornerShape(8.dp)
                             )
                             .border(
                                 width = 2.dp,

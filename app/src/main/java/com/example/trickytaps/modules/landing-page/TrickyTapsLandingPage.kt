@@ -70,7 +70,7 @@ fun TrickyTapsLandingPage(navController: NavController,db: FirebaseFirestore, us
             Spacer(modifier = Modifier.height(30.dp))
 
             Button(
-                onClick = { navController.navigate("leaderboardScreen/$username/$score/$initialTime/$mode") },
+                onClick = { navController.navigate("leaderboardScreen") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                 modifier = Modifier.fillMaxWidth(0.6f)
             ) {

@@ -5,12 +5,14 @@ import android.content.pm.ActivityInfo
 import android.media.MediaPlayer
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExitToApp
@@ -36,6 +38,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import com.example.trickytaps.R
 import com.example.trickytaps.generateTrickQuestion
+import kotlinx.coroutines.launch
 
 @Composable
 fun GameScreen(navController: NavController,
@@ -64,6 +67,10 @@ fun GameScreen(navController: NavController,
 
     var sfxVolume by remember { mutableStateOf(1f) }  // Default full volume for sound effects
     var bgmVolume by remember { mutableStateOf(1f) }  // Default full volume for background music
+
+    var selectedAnswer by remember { mutableStateOf<String?>(null) }
+    var correctAnswer by remember { mutableStateOf<Boolean?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(sfxVolume) {
         mediaPlayerRight.setVolume(sfxVolume, sfxVolume)
@@ -170,40 +177,54 @@ fun GameScreen(navController: NavController,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp)
-                            .background(Color.Gray)
+                            .background(
+                                if (selectedAnswer == option) {
+                                    if (correctAnswer == true) Color.Green.copy(alpha = 0.2f)
+                                    else Color.Red.copy(alpha = 0.2f)
+                                } else Color.Gray
+                            )
+                            .border(
+                                width = 2.dp,
+                                color = when {
+                                    selectedAnswer == option && correctAnswer == true -> Color.Green
+                                    selectedAnswer == option && correctAnswer == false -> Color.Red
+                                    else -> Color.Transparent
+                                },
+                                shape = RoundedCornerShape(8.dp)
+                            )
                             .clickable {
-                                if (option == currentQuestion.correctAnswer) {
-                                    if (timeLeft == 5){
-                                        score += 50
+                                if (selectedAnswer == null) { // Ensure only one answer is selected
+                                    selectedAnswer = option
+                                    if (option == currentQuestion.correctAnswer) {
+                                        correctAnswer = true
+                                        score += when (timeLeft) {
+                                            5 -> 50
+                                            4 -> 40
+                                            3 -> 30
+                                            2 -> 20
+                                            1 -> 10
+                                            else -> 10
+                                        }
                                         mediaPlayerRight.start()
+                                    } else {
+                                        correctAnswer = false
+                                        mediaPlayerWrong.start()
                                     }
-                                    else if (timeLeft == 4){
-                                        score += 40
-                                        mediaPlayerRight.start()
-                                    }
-                                    else if (timeLeft == 3){
-                                        score += 30
-                                        mediaPlayerRight.start()
-                                    }
-                                    else if (timeLeft == 20){
-                                        score += 40
-                                        mediaPlayerRight.start()
-                                    }
-                                    else{
-                                        score += 10
-                                        mediaPlayerRight.start() // Play correct answer sound
-                                    }
-                                } else {
-                                    mediaPlayerWrong.start() // Play wrong answer sound
-                                }
 
-                                if (questionCount < 10) {
-                                    currentQuestion = generateTrickQuestion()
-                                    timeLeft = initialTime // Reset timer for next question
-                                    questionCount++
-                                } else {
-                                    gameOver = true
-                                    mediaPlayerOver.start()
+                                    // Delay before moving to the next question to show feedback
+                                    coroutineScope.launch {
+                                        delay(500) // 500ms delay to show the outline
+                                        if (questionCount < 10) {
+                                            currentQuestion = generateTrickQuestion()
+                                            timeLeft = initialTime
+                                            questionCount++
+                                            selectedAnswer = null
+                                            correctAnswer = null
+                                        } else {
+                                            gameOver = true
+                                            mediaPlayerOver.start()
+                                        }
+                                    }
                                 }
                             }
                             .padding(16.dp),
@@ -213,8 +234,7 @@ fun GameScreen(navController: NavController,
                     }
                 }
             }
-
-            // Pause Button
+                    // Pause Button
             IconButton(
                 onClick = {
                     paused = !paused
@@ -307,7 +327,6 @@ fun GameOverScreen(navController: NavController, username: String, score: Int, d
             Button(onClick = {
                 // Pass the selected mode (easy or hard) to the leaderboard screen
                 navController.navigate("leaderboardScreen/$username/$score/$initialTime/$mode")
-                //navController.navigate("leaderboardScreen/$username/$score/$mode") // Pass mode here as well
             }) {
                 Text(text = "Show Leaderboard")
             }

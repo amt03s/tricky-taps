@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +39,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
+import kotlinx.coroutines.launch
 
 
 class MultiplayerActivity : ComponentActivity() {
@@ -71,7 +73,8 @@ fun MultiplayerScreen(navController: NavController,
     var showPauseDialog by remember { mutableStateOf(false) } // State to show the PauseDialog
 
     val configuration = LocalConfiguration.current
-    val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+    val isPortrait =
+        configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
     val context = LocalContext.current
     val mediaPlayerRight = remember { MediaPlayer.create(context, R.raw.right) }
@@ -82,6 +85,10 @@ fun MultiplayerScreen(navController: NavController,
 
     var sfxVolume by remember { mutableStateOf(1f) }  // Default volume for sound effects
     var bgmVolume by remember { mutableStateOf(1f) }  // Default volume for background music
+
+    val coroutineScope = rememberCoroutineScope()
+    val selectedAnswers = remember { mutableStateMapOf<Int, String?>() }
+    val correctAnswers = remember { mutableStateMapOf<Int, Boolean?>() }
 
     LaunchedEffect(sfxVolume) {
         mediaPlayerRight.setVolume(sfxVolume, sfxVolume)
@@ -139,92 +146,100 @@ fun MultiplayerScreen(navController: NavController,
                 Text(
                     text = buildAnnotatedString {
                         val questionText = currentQuestion.value.question
-                        val colorText = questionText.substringAfter("**").substringBefore("**") // Extracts the word to be colored
+                        val colorText = questionText.substringAfter("**")
+                            .substringBefore("**") // Extracts the word to be colored
                         val colorStartIndex = questionText.indexOf(colorText)
 
                         append(questionText)
                         if (colorStartIndex != -1) {
-                                addStyle(
-                                    style = SpanStyle(color = currentQuestion.value.displayedColor),
-                                    start = colorStartIndex,
-                                    end = colorStartIndex + colorText.length
-                                )
-                            }
-                        },
-                        fontSize = 22.sp,
-                        textAlign = TextAlign.Center,
-                    )
+                            addStyle(
+                                style = SpanStyle(color = currentQuestion.value.displayedColor),
+                                start = colorStartIndex,
+                                end = colorStartIndex + colorText.length
+                            )
+                        }
+                    },
+                    fontSize = 22.sp,
+                    textAlign = TextAlign.Center,
+                )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        playerNames.forEachIndexed { index, playerName ->
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = playerName,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    playerNames.forEachIndexed { index, playerName ->
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = playerName,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                                val options = currentQuestion.value.options.chunked(2)
-//                                options.forEach { rowOptions ->
-//                                    Row(
-//                                        modifier = Modifier.fillMaxWidth(),
-//                                        horizontalArrangement = Arrangement.SpaceEvenly
-//                                    ) {
-//                                        rowOptions.forEach { option ->
-//                                            AnswerButton(
-//                                                option,
-//                                                index,
-//                                                currentQuestion,
-//                                                viewModel,
-//                                                isPortrait,
-//                                                mediaPlayerRight,
-//                                                mediaPlayerWrong
-//                                            )
-//                                        }
-//                                    }
-//                                }
-                                // Inside MultiplayerScreen where options are generated
-                                options.forEach { rowOptions ->
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceEvenly
-                                    ) {
-                                        rowOptions.forEach { option ->
-                                            Box(
-                                                modifier = Modifier
-                                                    .weight(1f) // Equal size for each button
-                                                    .height(60.dp)
-                                                    .padding(4.dp)
-                                                    .background(Color.Gray, shape = RoundedCornerShape(8.dp))
-                                                    .clickable {
+                            val options = currentQuestion.value.options.chunked(2)
+                            options.forEach { rowOptions ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                ) {
+                                    rowOptions.forEach { option ->
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(60.dp)
+                                                .padding(4.dp)
+                                                .background(
+                                                    when {
+                                                        selectedAnswers[index] == option && correctAnswers[index] == true -> Color.Green.copy(alpha = 0.2f)
+                                                        selectedAnswers[index] == option && correctAnswers[index] == false -> Color.Red.copy(alpha = 0.2f)
+                                                        else -> Color.Gray
+                                                    },shape = RoundedCornerShape(8.dp)
+                                                )
+                                                .border(
+                                                    width = 2.dp,
+                                                    color = when {
+                                                        selectedAnswers[index] == option && correctAnswers[index] == true -> Color.Green
+                                                        selectedAnswers[index] == option && correctAnswers[index] == false -> Color.Red
+                                                        else -> Color.Transparent
+                                                    },
+                                                    shape = RoundedCornerShape(8.dp)
+                                                )
+                                                .clickable {
+                                                    if (selectedAnswers[index] == null) { // Prevent multiple clicks
+                                                        selectedAnswers[index] = option
                                                         if (option == currentQuestion.value.correctAnswer) {
+                                                            correctAnswers[index] = true
                                                             mediaPlayerRight.start()
                                                             viewModel.updateScore(playerNames[index])
                                                         } else {
+                                                            correctAnswers[index] = false
                                                             mediaPlayerWrong.start()
                                                         }
-                                                        currentQuestion.value = generateTrickQuestion()
-                                                    },
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = option,
-                                                    fontSize = 18.sp,
-                                                    color = Color.White,
-                                                    textAlign = TextAlign.Center
-                                                )
-                                            }
+
+                                                        // Wait a bit to show the feedback, then reset
+                                                        coroutineScope.launch {
+                                                            delay(500)
+                                                            selectedAnswers[index] = null
+                                                            correctAnswers[index] = null
+                                                            currentQuestion.value = generateTrickQuestion()
+                                                        }
+                                                    }
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = option,
+                                                fontSize = 18.sp,
+                                                color = Color.White,
+                                                textAlign = TextAlign.Center
+                                            )
                                         }
                                     }
                                 }
@@ -232,13 +247,13 @@ fun MultiplayerScreen(navController: NavController,
                         }
                     }
                 }
-//            }
+            }
 
             IconButton(
                 onClick = {
                     isPaused = !isPaused
                     showPauseDialog = true
-                },
+                          },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(8.dp)
@@ -249,60 +264,24 @@ fun MultiplayerScreen(navController: NavController,
                     modifier = Modifier.size(32.dp)
                 )
             }
-        }
-
-        // Show Pause Dialog if paused
-        if (showPauseDialog) {
-            PauseDialog(
-                onResume = {
-                    showPauseDialog = false
-                    isPaused = false
-                },
-                onBgmVolumeChange = { newVolume -> bgmVolume = newVolume },
-                onSfxVolumeChange = { newVolume -> sfxVolume = newVolume },
-                bgmVolume = bgmVolume,
-                sfxVolume = sfxVolume,
-                navController = navController
-            )
+            // Show Pause Dialog if paused
+            if (showPauseDialog) {
+                PauseDialog(
+                    onResume = {
+                        showPauseDialog = false
+                        isPaused = false
+                               },
+                    onBgmVolumeChange = { newVolume -> bgmVolume = newVolume },
+                    onSfxVolumeChange = { newVolume -> sfxVolume = newVolume },
+                    bgmVolume = bgmVolume,
+                    sfxVolume = sfxVolume,
+                    navController = navController
+                )
+            }
         }
     }
 }
 
-//@Composable
-//fun AnswerButton(
-//    option: String,
-//    playerIndex: Int,
-//    currentQuestion: MutableState<TrickQuestion>,
-//    viewModel: MultiplayerViewModel,
-//    isPortrait: Boolean,
-//    mediaPlayerRight: MediaPlayer,
-//    mediaPlayerWrong: MediaPlayer
-//) {
-//    // Get player name safely
-//    val playerNames = viewModel.playerNames.collectAsState().value
-//    val playerName = playerNames.getOrNull(playerIndex) ?: "Unknown Player" // Avoid crashes
-//
-////    Box(
-////        modifier = Modifier
-////            .width(if (isPortrait) 250.dp else 160.dp)
-////            .height(60.dp)
-////            .padding(4.dp)
-////            .background(Color.Gray, shape = RoundedCornerShape(8.dp))
-////            .clickable {
-////                if (option == currentQuestion.value.correctAnswer) {
-////                    mediaPlayerRight.start()
-////                    viewModel.updateScore(playerName)
-////                } else {
-////                    mediaPlayerWrong.start()
-////                }
-////                currentQuestion.value = generateTrickQuestion() // Load new question
-////            }
-////            .padding(12.dp),
-////        contentAlignment = Alignment.Center
-////    ) {
-////        Text(text = option, fontSize = 18.sp, color = Color.White, textAlign = TextAlign.Center)
-////    }
-//}
 
 @Composable
 fun MultiplayerGameOverScreen(
@@ -319,7 +298,6 @@ fun MultiplayerGameOverScreen(
 
     // State to track the action (whether "Play Again" or "Exit" was clicked)
     var clickedPlayAgain by remember { mutableStateOf(false) }
-
     // Lock orientation to landscape when the screen is first shown
     DisposableEffect(Unit) {
         (context as? ComponentActivity)?.requestedOrientation =
@@ -347,7 +325,6 @@ fun MultiplayerGameOverScreen(
                 ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
     }
-
     // Logic for Exit button click
     val handleExitClick: () -> Unit = {
         clickedPlayAgain = false
@@ -358,7 +335,6 @@ fun MultiplayerGameOverScreen(
                 ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
     }
-
     LaunchedEffect(Unit) {
         // Update win count when the screen is shown
         viewModel.updateWinCount()
@@ -366,9 +342,11 @@ fun MultiplayerGameOverScreen(
 
     val winCounts by viewModel.winCounts.collectAsState() // Get updated win counts
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         IconButton(
             onClick = handleExitClick, // Exit action
             modifier = Modifier.align(Alignment.TopEnd)
@@ -382,31 +360,37 @@ fun MultiplayerGameOverScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(text = "Game Over!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-
+            Text(
+                text = "Game Over!",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold
+            )
             if (winners.size == 1) {
-                Text(text = "Winner: ${winners.first()} with $maxScore points!", fontSize = 24.sp)
+                Text(
+                    text = "Winner: ${winners.first()} with $maxScore points!",
+                    fontSize = 24.sp
+                )
             } else {
                 Text(
                     text = "It's a tie between ${winners.joinToString(", ")} with $maxScore points!",
                     fontSize = 24.sp
                 )
             }
-
             Spacer(modifier = Modifier.height(16.dp))
-
             // Display Games Won Leaderboard
-            Text(text = "🏆 Games Won:", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(
+                text = "🏆 Games Won:",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
             winCounts.forEach { (player, wins) ->
                 // Use a conditional check to decide between "win" or "wins"
                 val winText = if (wins == 1) "win" else "wins"
                 Text(text = "$player: $wins $winText", fontSize = 20.sp)
             }
-
             Spacer(modifier = Modifier.height(16.dp))
-
             Button(onClick = handlePlayAgainClick) { // Play Again action
-                Text(text = "Play Again")
+            Text(text = "Play Again")
             }
         }
     }

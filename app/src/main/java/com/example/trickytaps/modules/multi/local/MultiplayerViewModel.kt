@@ -1,5 +1,5 @@
 // MultiplayerViewModel.kt
-package com.example.trickytaps.modules.multi
+package com.example.trickytaps.modules.multi.local
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,10 +31,6 @@ class MultiplayerViewModel : ViewModel() {
         _playerCount.value = names.size
     }
 
-    fun getPlayers(): List<String> {
-        return _playerNames.value
-    }
-
     fun updateScore(playerName: String) { // Updates only in-game points
         _scores.value = _scores.value.mapValues {
             if (it.key == playerName) it.value + 10 else it.value
@@ -50,7 +46,7 @@ class MultiplayerViewModel : ViewModel() {
         }
     }
 
-    fun resetScores() { // Resets round scores, NOT total wins
+    fun resetScores() { // Resets round scores, not total wins
         _scores.value = _playerNames.value.associateWith { 0 }
 
 

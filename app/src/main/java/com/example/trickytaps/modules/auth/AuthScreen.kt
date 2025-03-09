@@ -186,7 +186,8 @@ fun signUpUser(email: String, password: String, navController: NavController, co
                 val newUser = mapOf(
                     "email" to email,
                     "easy" to 0,  // Default easy mode high score
-                    "hard" to 0   // Default hard mode high score
+                    "hard" to 0,  // Default hard mode high score
+                    "score" to 0  // Multiplayer hard mode score
                 )
 
                 db.collection("users").document(userId)

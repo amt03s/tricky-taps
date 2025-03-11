@@ -42,55 +42,6 @@ class FirebaseFirestoreService {
     }
 
 
-
-    // Listen for Game Updates
-    fun listenForGameUpdates(gameId: String, onGameUpdated: (Map<String, Any>) -> Unit) {
-        db.collection("games").document(gameId)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.e("Firestore", "Error listening for game updates: ${e.message}")
-                    return@addSnapshotListener
-                }
-
-                snapshot?.let {
-                    val gameData = it.data ?: return@addSnapshotListener
-                    onGameUpdated(gameData)
-                }
-            }
-    }
-
-    // Listen for Player Join
-    fun listenForPlayerJoin(gameId: String, onPlayerJoined: (Boolean) -> Unit) {
-        db.collection("games").document(gameId)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.e("Firestore", "Error getting game data: ${e.message}")
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null && snapshot.exists()) {
-                    val players = snapshot.get("players") as? Map<String, Any>
-                    val secondPlayerJoined = players?.size == 2  // Check if there are 2 players
-
-                    onPlayerJoined(secondPlayerJoined)
-                }
-            }
-    }
-
-    // Update Score
-    // FirebaseFirestoreService.kt
-
-    fun updateScore(gameId: String, playerName: String, newScore: Int) {
-        db.collection("games").document(gameId)
-            .update("players.$playerName.score", newScore)
-            .addOnSuccessListener {
-                Log.d("Firestore", "Player $playerName score updated to $newScore")
-            }
-            .addOnFailureListener { e ->
-                Log.e("Firestore", "Error updating player score: ${e.message}")
-            }
-    }
-
     // Fetch Available Games
     fun fetchAvailableGames(onGamesFetched: (List<GameInfo>) -> Unit) {
         db.collection("games")
@@ -124,46 +75,6 @@ class FirebaseFirestoreService {
                 Log.e("Firestore", "Error updating player ready status: ${e.message}")
             }
     }
-
-    fun updateQuestion(gameId: String, newQuestion: TrickQuestion) {
-        // Update the Firestore document with the new question
-        db.collection("games").document(gameId)
-            .update("currentQuestion", newQuestion)
-            .addOnSuccessListener {
-                Log.d("Firestore", "Question updated successfully!")
-            }
-            .addOnFailureListener { exception ->
-                Log.e("Firestore", "Error updating question", exception)
-            }
-    }
-
-    fun updateGameStatus(gameId: String, status: String) {
-        db.collection("games").document(gameId)
-            .update("status", status)
-            .addOnSuccessListener {
-                Log.d("Firestore", "Game status updated successfully to: $status")
-            }
-            .addOnFailureListener { e ->
-                Log.e("Firestore", "Error updating game status", e)
-            }
-    }
-
-    fun updateGameStatusToReady(gameId: String) {
-        // Get a reference to the game document in Firestore
-        val gameRef = db.collection("games").document(gameId)
-
-        // Update the status field to "ready"
-        gameRef.update("status", "ready")
-            .addOnSuccessListener {
-                Log.d("Firestore", "Game status updated to 'ready' successfully.")
-            }
-            .addOnFailureListener { e ->
-                Log.e("Firestore", "Error updating game status", e)
-            }
-    }
-
-
-
 }
 
 

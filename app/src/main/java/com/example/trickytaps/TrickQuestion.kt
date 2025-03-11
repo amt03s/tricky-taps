@@ -32,6 +32,26 @@ fun generateTrickQuestion(): TrickQuestion {
         "Pick the odd one out",
         "Find the hidden number",
         "Tap the longest word",
+        "Which number is prime?",
+        "Pick the animal that cannot fly",
+        "Which planet is closest to the Sun?",
+        "Choose the fastest mode of transportation",
+        "What comes next? (2, 4, 8, 16, ?)",
+        "Which one is a mammal?",
+        "Which shape is a rectangle?",
+        "Which word is a synonym for 'happy'?",
+        "Which is an even number?",
+        "What is the capital of France?",
+        "Which is the tallest mountain?",
+        "Pick the chemical symbol for gold",
+        "Which organ pumps blood?",
+        "Which day comes after Monday?",
+        "What color is an emerald?",
+        "Pick the smallest prime number",
+        "How many sides does a hexagon have?",
+        "Which month has 28 days?",
+        "Which animal is a reptile?",
+        "Find the hidden shape"
     )
 
     val randomQuestion = questions.random()
@@ -155,6 +175,86 @@ fun generateTrickQuestion(): TrickQuestion {
             val options = listOf("Elephant", "Hippopotamus", "Butterfly", "Giraffe")
             TrickQuestion(randomQuestion, options, "Hippopotamus", Color.Black)
         }
+        "Which is the tallest mountain?" -> TrickQuestion(
+            "Which is the tallest mountain?",
+            listOf("K2", "Kilimanjaro", "Everest", "Makalu"),
+            "Everest",
+            Color.Black
+        )
+
+        "Pick the chemical symbol for gold" -> TrickQuestion(
+            "Pick the chemical symbol for gold",
+            listOf("Go", "Au", "Ag", "Fe"),
+            "Au",
+            Color.Black
+        )
+
+        "Which organ pumps blood?" -> TrickQuestion(
+            "Which organ pumps blood?",
+            listOf("Brain", "Liver", "Heart", "Lungs"),
+            "Heart",
+            Color.Black
+        )
+
+        "Which day comes after Monday?" -> TrickQuestion(
+            "Which day comes after Monday?",
+            listOf("Sunday", "Wednesday", "Friday", "Tuesday"),
+            "Tuesday",
+            Color.Black
+        )
+
+        "What color is an emerald?" -> TrickQuestion(
+            "What color is an emerald?",
+            listOf("Red", "Green", "Blue", "Yellow"),
+            "Green",
+            Color.Black
+        )
+
+        "Pick the smallest prime number" -> TrickQuestion(
+            "Pick the smallest prime number",
+            listOf("0", "1", "2", "3"),
+            "2",
+            Color.Black
+        )
+
+        "How many sides does a hexagon have?" -> TrickQuestion(
+            "How many sides does a hexagon have?",
+            listOf("5", "6", "7", "8"),
+            "6",
+            Color.Black
+        )
+
+        "Which month has 28 days?" -> TrickQuestion(
+            "Which month has 28 days?",
+            listOf("February", "April", "All of them", "November"),
+            "All of them",
+            Color.Black
+        )
+
+        "Which animal is a reptile?" -> TrickQuestion(
+            "Which animal is a reptile?",
+            listOf("Snake", "Dog", "Whale", "Eagle"),
+            "Snake",
+            Color.Black
+        )
+
+        "Find the hidden shape" -> TrickQuestion(
+            "Find the hidden shape",
+            listOf("Circle", "Square", "Triangle", "Hexagon"),
+            "Triangle",
+            Color.Black
+        )
+        "Which number is prime?" -> TrickQuestion("Which number is prime?", listOf("15", "17", "21", "25"), "17", Color.Black)
+        "Pick the animal that cannot fly" -> TrickQuestion("Pick the animal that cannot fly", listOf("Penguin", "Bat", "Owl", "Eagle"), "Penguin", Color.Black)
+        "Which planet is closest to the Sun?" -> TrickQuestion("Which planet is closest to the Sun?", listOf("Venus", "Earth", "Mercury", "Mars"), "Mercury", Color.Black)
+        "Choose the fastest mode of transportation" -> TrickQuestion("Choose the fastest mode of transportation", listOf("Train", "Plane", "Car", "Bicycle"), "Plane", Color.Black)
+        "What comes next? (2, 4, 8, 16, ?)" -> TrickQuestion("What comes next? (2, 4, 8, 16, ?)", listOf("24", "32", "40", "48"), "32", Color.Black)
+        "Which one is a mammal?" -> TrickQuestion("Which one is a mammal?", listOf("Shark", "Dolphin", "Octopus", "Crocodile"), "Dolphin", Color.Black)
+        "Which shape is a rectangle?" -> TrickQuestion("Which shape is a rectangle?", listOf("Circle", "Triangle", "Square", "Parallelogram"), "Parallelogram", Color.Black)
+        "Which word is a synonym for 'happy'?" -> TrickQuestion("Which word is a synonym for 'happy'?", listOf("Sad", "Angry", "Cheerful", "Sleepy"), "Cheerful", Color.Black)
+        "Which is an even number?" -> TrickQuestion("Which is an even number?", listOf("3", "7", "10", "15"), "10", Color.Black)
+        "What is the capital of France?" -> TrickQuestion("What is the capital of France?", listOf("Berlin", "Madrid", "Paris", "Rome"), "Paris", Color.Black)
+
         else -> TrickQuestion("Error loading question", listOf("N/A"), "N/A", Color.Black)
     }
 }

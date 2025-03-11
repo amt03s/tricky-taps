@@ -123,30 +123,29 @@ fun GameScreen(navController: NavController,
     if (gameOver) {
         GameOverScreen(score = score, navController = navController, username = username, db = db, initialTime = initialTime, mode = mode)
     } else {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+
+            Text(
+                text = "Player: $username",
+                fontSize = 22.sp,
+                modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
+            )
+
             Column(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                Spacer(modifier = Modifier.height(20.dp))
                 Text(
-                    text = "Player: $username",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Blue
+                    text = "Score: $score",
+                    fontSize = 24.sp,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
-                Text(
-                    text = "High Score: $highScore",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Green
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
-                Text(text = "Time Left: $timeLeft", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = "Time Left: $timeLeft", fontSize = 22.sp)
 
-                Text(text = "Score: $score", fontSize = 20.sp)
                 Spacer(modifier = Modifier.height(32.dp))
                 // Display Trick Question
                 Text(
@@ -166,8 +165,9 @@ fun GameScreen(navController: NavController,
                             )
                         }
                     },
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -233,6 +233,12 @@ fun GameScreen(navController: NavController,
                         Text(text = option, fontSize = 18.sp, color = Color.White)
                     }
                 }
+
+                Spacer(modifier = Modifier.height(50.dp))
+                Text(
+                    text = " ⭐ $highScore",
+                    fontSize = 22.sp
+                )
             }
                     // Pause Button
             IconButton(
@@ -240,7 +246,7 @@ fun GameScreen(navController: NavController,
                     paused = !paused
                     showPauseDialog = true
                 },
-                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+                modifier = Modifier.align(Alignment.TopEnd)
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
@@ -528,7 +534,6 @@ fun LeaderboardScreen(navController: NavController, db: FirebaseFirestore, usern
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(20.dp))
         }
     }

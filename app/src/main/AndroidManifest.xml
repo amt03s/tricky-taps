@@ -25,7 +25,7 @@
         </activity>
 
         <activity
-            android:name=".modules.multi.MultiplayerActivity">
+            android:name=".modules.multi.local.MultiplayerActivity">
         </activity>
 
     </application>

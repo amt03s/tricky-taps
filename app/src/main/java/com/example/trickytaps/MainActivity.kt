@@ -2,25 +2,18 @@
 package com.example.trickytaps
 
 import android.media.MediaPlayer
-import android.os.Build
 import android.os.Bundle
-import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -29,13 +22,22 @@ import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.example.trickytaps.modules.auth.AuthScreen
+import com.example.trickytaps.modules.auth.MultiplayerAuthScreen
+import com.example.trickytaps.modules.auth.MultiplayerUsernameScreen
 import com.example.trickytaps.modules.auth.UsernameScreen
 import com.example.trickytaps.modules.`landing-page`.Help
 import com.example.trickytaps.modules.`landing-page`.TrickyTapsLandingPage
+import com.example.trickytaps.modules.multi.MultiplayerModeSelection
+import com.example.trickytaps.modules.multi.local.MultiplayerModeSelectionScreen
+import com.example.trickytaps.modules.multi.local.MultiplayerScreen
+import com.example.trickytaps.modules.multi.local.MultiplayerViewModel
+import com.example.trickytaps.modules.multi.online.CreateOnlineGameScreen
+import com.example.trickytaps.modules.multi.online.JoinOnlineGameScreen
+import com.example.trickytaps.modules.multi.online.OnlineMultiplayerGameScreen
+import com.example.trickytaps.modules.multi.online.OnlineOpponentMultiplayerGameScreen
+import com.example.trickytaps.modules.multi.online.OnlineMultiplayerModeSelectionScreen
+import com.example.trickytaps.modules.multi.online.ReadyScreen
 import com.example.trickytaps.modules.landingpage.LeaderBoardsLandingPage
-import com.example.trickytaps.modules.multi.MultiplayerModeSelectionScreen
-import com.example.trickytaps.modules.multi.MultiplayerScreen
-import com.example.trickytaps.modules.multi.MultiplayerViewModel
 import com.example.trickytaps.modules.single.DifficultyModeScreen
 import com.example.trickytaps.modules.single.GameOverScreen
 import com.example.trickytaps.modules.single.GameScreen
@@ -114,8 +116,20 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
                     mode
                 )
             }
-            composable("multiplayerModeSelection") {
+            composable("multiplayerModeSelectionScreen") {
                 MultiplayerModeSelectionScreen(navController, viewModel) // Pass ViewModel
+            }
+            composable("OnlineMultiplayerModeSelectionScreen") {
+                OnlineMultiplayerModeSelectionScreen(navController = navController)
+            }
+
+            composable("multiplayerModeSelection") {
+                MultiplayerModeSelection(navController) // Pass ViewModel
+            }
+            composable("multiplayerAuthScreen") { MultiplayerAuthScreen(navController) }
+            composable("multiplayerUsernameScreen/{userId}") { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                MultiplayerUsernameScreen(navController, userId)
             }
             composable("rotateScreen/{playerCount}") { backStackEntry ->
                 val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
@@ -131,78 +145,173 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
                 UsernameScreen(navController, userId)
             }
+//        composable("leaderboardScreen/{username}/{score}/{mode}") { backStackEntry ->
+//            val username = backStackEntry.arguments?.getString("username") ?: "Player"
+//            val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+//            val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+//            val initialTime = backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 5  // Default to 5
+//
+//            LeaderboardScreen(navController, FirebaseFirestore.getInstance(), username, score, initialTime, mode)
+//        }
             composable("leaderboardScreen/{username}/{score}/{initialTime}/{mode}") { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
                 val initialTime =
                     backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 5
                 val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+                NavHost(navController, startDestination = "landingPage") {
+                    composable("landingPage") { backStackEntry ->
+                        val username = backStackEntry.arguments?.getString("username") ?: ""
+                        val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+                        val initialTime =
+                            backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 5
+                        val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+                        TrickyTapsLandingPage(
+                            navController,
+                            FirebaseFirestore.getInstance(),
+                            username,
+                            score,
+                            initialTime,
+                            mode
+                        )
+                    }
+                    composable("multiplayerModeSelection") {
+                        MultiplayerModeSelectionScreen(navController, viewModel) // Pass ViewModel
+                    }
+                    composable("rotateScreen/{playerCount}") { backStackEntry ->
+                        val playerCount =
+                            backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2
+                        RotateToLandscapeScreen(navController, playerCount)
+                    }
+                    composable("multiplayerScreen/{playerCount}") {
+                        MultiplayerScreen(navController, viewModel, onVolumeChange = { newVolume ->
+                            MediaPlayerManager.setVolume(newVolume)
+                        }) // Pass viewModel
+                    }
+                    composable("authScreen") { AuthScreen(navController) }
+                    composable("usernameScreen/{userId}") { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                        UsernameScreen(navController, userId)
+                    }
+                    composable("leaderboardScreen/{username}/{score}/{initialTime}/{mode}") { backStackEntry ->
+                        val username = backStackEntry.arguments?.getString("username") ?: ""
+                        val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+                        val initialTime =
+                            backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 5
+                        val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
 
-                LeaderboardScreen(
-                    navController,
-                    FirebaseFirestore.getInstance(),
-                    username,
-                    score,
-                    initialTime,
-                    mode
-                )
-            }
+                        LeaderboardScreen(
+                            navController,
+                            FirebaseFirestore.getInstance(),
+                            username,
+                            score,
+                            initialTime,
+                            mode
+                        )
+                    }
 
-            composable("leaderboardScreen") { backStackEntry ->
-                val username = backStackEntry.arguments?.getString("username") ?: ""
-                val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
-                val initialTime =
-                    backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 5
-                val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+                    composable("leaderboardScreen") { backStackEntry ->
+                        val username = backStackEntry.arguments?.getString("username") ?: ""
+                        val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+                        val initialTime =
+                            backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 5
+                        val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
 
-                LeaderBoardsLandingPage(
-                    navController,
-                    FirebaseFirestore.getInstance(),
-                    username,
-                    score,
-                    initialTime,
-                    mode
-                )
-            }
+                        LeaderBoardsLandingPage(
+                            navController,
+                            FirebaseFirestore.getInstance(),
+                            username,
+                            score,
+                            initialTime,
+                            mode
+                        )
+                    }
 
-            composable("gameOverScreen/{username}/{score}/{initialTime}/{mode}") { backStackEntry ->
-                val username = backStackEntry.arguments?.getString("username") ?: "Player"
-                val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
-                val initialTime =
-                    backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
-                val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
-                GameOverScreen(
-                    navController,
-                    username,
-                    score,
-                    FirebaseFirestore.getInstance(),
-                    initialTime,
-                    mode
-                )
-            }
+                    composable("gameOverScreen/{username}/{score}/{initialTime}/{mode}") { backStackEntry ->
+                        val username = backStackEntry.arguments?.getString("username") ?: "Player"
+                        val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0
+                        val initialTime =
+                            backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
+                        val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+                        GameOverScreen(
+                            navController,
+                            username,
+                            score,
+                            FirebaseFirestore.getInstance(),
+                            initialTime,
+                            mode
+                        )
+                    }
 
-            composable("help") {
-                Help(navController)
-            }
-            composable("modeScreen/{username}") { backStackEntry ->
-                val username = backStackEntry.arguments?.getString("username") ?: ""
-                DifficultyModeScreen(navController = navController, username)
-            }
-            composable("gameScreen/{initialTime}/{username}/{mode}") { backStackEntry ->
-                val username = backStackEntry.arguments?.getString("username") ?: ""
-                val initialTime =
-                    backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
-                val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
-                GameScreen(
-                    navController = navController,
-                    initialTime = initialTime,
-                    username = username,
-                    db = FirebaseFirestore.getInstance(),
-                    onVolumeChange = { newVolume ->
-                        MediaPlayerManager.setVolume(newVolume)
-                    },
-                    mode = mode
-                )
+                    composable("help") {
+                        Help(navController)
+                    }
+                    composable("modeScreen/{username}") { backStackEntry ->
+                        val username = backStackEntry.arguments?.getString("username") ?: ""
+                        DifficultyModeScreen(navController = navController, username)
+                    }
+                    composable("gameScreen/{initialTime}/{username}/{mode}") { backStackEntry ->
+                        val username = backStackEntry.arguments?.getString("username") ?: ""
+                        val initialTime =
+                            backStackEntry.arguments?.getString("initialTime")?.toIntOrNull() ?: 0
+                        val mode = backStackEntry.arguments?.getString("mode") ?: "easy"
+                        GameScreen(
+                            navController = navController,
+                            initialTime = initialTime,
+                            username = username,
+                            db = FirebaseFirestore.getInstance(),
+                            onVolumeChange = { newVolume ->
+                                MediaPlayerManager.setVolume(newVolume)
+                            },
+                            mode = mode
+                        )
+                    }
+
+                    composable("localMultiplayerModeSelection") {
+                        // Existing local multiplayer screen
+                        MultiplayerModeSelectionScreen(navController, viewModel)
+                    }
+
+                    composable("onlineMultiplayerModeSelection") {
+                        // New online multiplayer screen (to be implemented)
+                        OnlineMultiplayerModeSelectionScreen(navController)
+                    }
+                    composable("createOnlineGame/{playerName}") { backStackEntry ->
+                        val playerName = backStackEntry.arguments?.getString("playerName") ?: ""
+                        CreateOnlineGameScreen(
+                            navController = navController,
+                            playerName = playerName
+                        )
+                    }
+
+                    composable("joinOnlineGame/{playerName}") { backStackEntry ->
+                        val playerName = backStackEntry.arguments?.getString("playerName") ?: ""
+                        JoinOnlineGameScreen(navController, playerName)
+                    }
+                    composable("onlineMultiplayerGame/{gameId}/{playerName}") { backStackEntry ->
+                        val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
+                        val playerName = backStackEntry.arguments?.getString("playerName") ?: ""
+                        OnlineMultiplayerGameScreen(
+                            navController = navController,
+                            gameId = gameId,
+                            playerName = playerName
+                        )
+                    }
+                    composable("readyScreen/{gameId}/{playerName}") { backStackEntry ->
+                        val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
+                        val playerName = backStackEntry.arguments?.getString("playerName") ?: ""
+                        ReadyScreen(navController, gameId, playerName)
+                    }
+                    composable("onlineOpponentMultiplayerGame/{gameId}/{playerName}") { backStackEntry ->
+                        val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
+                        val playerName = backStackEntry.arguments?.getString("playerName") ?: ""
+                        OnlineOpponentMultiplayerGameScreen(
+                            navController = navController,
+                            gameId = gameId,
+                            playerName = playerName
+                        )
+                    }
+                }
             }
         }
     }

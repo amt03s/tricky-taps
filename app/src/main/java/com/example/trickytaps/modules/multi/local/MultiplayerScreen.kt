@@ -1,5 +1,5 @@
 // MultiplayerScreen.kt
-package com.example.trickytaps.modules.multi
+package com.example.trickytaps.modules.multi.local
 
 import android.content.pm.ActivityInfo
 import android.media.MediaPlayer

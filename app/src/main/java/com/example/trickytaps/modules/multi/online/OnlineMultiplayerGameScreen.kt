@@ -63,86 +63,187 @@ fun OnlineMultiplayerGameScreen(
             viewModel.updateGameStatus(gameId, "ready")
         }
 
-        // Proceed to the respective game screen if both players are ready
-        if (gameState!!.status == "ready") {
-            navController.navigate("onlineMultiplayerGame/${gameState!!.gameId}/${playerName}")
-        } else {
-            // Display the waiting screen
+        if (gameState == null) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = "Waiting for other player to be ready",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                CircularProgressIndicator()
+                Text(text = "Waiting for the game to start...", fontSize = 20.sp)
             }
-        }
+        } else {
+            // Extract data from game state
+            val players = gameState!!.players
+            val status = gameState!!.status
+            val currentQuestion = gameState!!.currentQuestion
 
-        // Display the game content
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Text(
-                text = "Game Status: $status",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+            // Check if both players are ready
+            val bothPlayersReady = players.values.all { it.isReady }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            // Update the game status to "ready" when both players are ready
+            if (bothPlayersReady && status != "ready") {
+                viewModel.updatePlayerReadyStatus(gameId, playerName, true)
+                viewModel.updatePlayerReadyStatus(gameId, gameState!!.players.keys.first { it != playerName }, true) // Update second player
 
-            // Show the player's name and score
-            Text(
-                text = "Player: $playerName",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Score: ${players[playerName]?.score ?: 0}",
-                fontSize = 20.sp
-            )
+                // Update the game status to "ready" after both players are ready
+                viewModel.updateGameStatus(gameId, "ready")
+            }
 
-            Spacer(modifier = Modifier.height(30.dp))
-
-            // Display the current question
-            Text(
-                text = currentQuestion?.question ?: "No question available",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Display the answer options
-            currentQuestion?.options?.let { options ->
+            // Ensure that the question is available before proceeding to the game screen
+            if (gameState!!.status == "ready" && currentQuestion != null) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top
                 ) {
-                    options.forEach { option ->
-                        AnswerButton(
-                            option = option,
-                            correctAnswer = currentQuestion.correctAnswer,
-                            gameId = gameId,
-                            playerName = playerName,
-                            viewModel = viewModel
-                        )
+                    Text(
+                        text = "Game Status: $status",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Show the player's name and score
+                    Text(
+                        text = "Player: $playerName",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Score: ${players[playerName]?.score ?: 0}",
+                        fontSize = 20.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(30.dp))
+
+                    // Display the current question
+                    Text(
+                        text = currentQuestion?.question ?: "No question available",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Display the answer options
+                    currentQuestion?.options?.let { options ->
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            options.forEach { option ->
+                                AnswerButton(
+                                    option = option,
+                                    correctAnswer = currentQuestion.correctAnswer,
+                                    gameId = gameId,
+                                    playerName = playerName,
+                                    viewModel = viewModel
+                                )
+                            }
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(30.dp))
+        // Proceed to the respective game screen if both players are ready
+//        if (gameState!!.status == "ready") {
+//            // Ensure that the question is available before navigating
+//            if (currentQuestion != null) {
+//                navController.navigate("onlineMultiplayerGame/${gameState!!.gameId}/${playerName}")
+//            } else {
+//                // If no question available, display a fallback message
+//                Column(
+//                    modifier = Modifier.fillMaxSize().padding(16.dp),
+//                    horizontalAlignment = Alignment.CenterHorizontally,
+//                    verticalArrangement = Arrangement.Center
+//                ) {
+//                    Text(
+//                        text = "Waiting for question to load...",
+//                        fontSize = 20.sp,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                }
+//            }
+//        } else {
+//            // Display the waiting screen
+//            Column(
+//                modifier = Modifier.fillMaxSize().padding(16.dp),
+//                horizontalAlignment = Alignment.CenterHorizontally,
+//                verticalArrangement = Arrangement.Center
+//            ) {
+//                Text(
+//                    text = "Waiting for other player to be ready",
+//                    fontSize = 20.sp,
+//                    fontWeight = FontWeight.Bold
+//                )
+//            }
+//        }
+//
+//        // Display the game content
+//        if (currentQuestion != null) {
+//            Column(
+//                modifier = Modifier.fillMaxSize().padding(16.dp),
+//                horizontalAlignment = Alignment.CenterHorizontally,
+//                verticalArrangement = Arrangement.Top
+//            ) {
+//                Text(
+//                    text = "Game Status: $status",
+//                    fontSize = 18.sp,
+//                    fontWeight = FontWeight.Bold
+//                )
+//
+//                Spacer(modifier = Modifier.height(20.dp))
+//
+//                // Show the player's name and score
+//                Text(
+//                    text = "Player: $playerName",
+//                    fontSize = 24.sp,
+//                    fontWeight = FontWeight.Bold
+//                )
+//                Text(
+//                    text = "Score: ${players[playerName]?.score ?: 0}",
+//                    fontSize = 20.sp
+//                )
+//
+//                Spacer(modifier = Modifier.height(30.dp))
+//
+//                // Display the current question
+//                Text(
+//                    text = currentQuestion?.question ?: "No question available",
+//                    fontSize = 22.sp,
+//                    fontWeight = FontWeight.Bold
+//                )
+//
+//                Spacer(modifier = Modifier.height(20.dp))
+//
+//                // Display the answer options
+//                currentQuestion?.options?.let { options ->
+//                    Column(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        horizontalAlignment = Alignment.CenterHorizontally
+//                    ) {
+//                        options.forEach { option ->
+//                            AnswerButton(
+//                                option = option,
+//                                correctAnswer = currentQuestion.correctAnswer,
+//                                gameId = gameId,
+//                                playerName = playerName,
+//                                viewModel = viewModel
+//                            )
+//                        }
+//                    }
+//                }
 
-            // Button to leave the game or go back
-            Button(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.fillMaxWidth(0.6f)
-            ) {
-                Text(text = "Exit Game")
+                Spacer(modifier = Modifier.height(30.dp))
+
+                // Button to leave the game or go back
+                Button(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.fillMaxWidth(0.6f)
+                ) {
+                    Text(text = "Exit Game")
+                }
             }
         }
     }

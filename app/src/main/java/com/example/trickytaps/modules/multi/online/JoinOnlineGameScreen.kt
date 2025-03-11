@@ -135,26 +135,28 @@ fun ReadyScreen(navController: NavController, gameId: String, playerName: String
     val gameState by viewModel.gameState.collectAsState()
 
     var isReady by remember { mutableStateOf(false) }
+    var hasNavigated by remember { mutableStateOf(false) } // Prevent multiple navigation calls
 
-    // ✅ Listen for game updates and ensure real-time Firestore changes are captured
+    // Listen for Firestore updates
     LaunchedEffect(gameId) {
         viewModel.listenForGameUpdates(gameId) {
-            Log.d("Firestore", "Game status updated: ${gameState?.status}")
+            Log.d("Firestore", "Game status updated in ReadyScreen: ${gameState?.status}")
         }
     }
 
-    // ✅ Ensure **navigation happens when Firestore confirms status = "ready"**
+    // Ensure `gameState.status` changes trigger navigation **only once**
     LaunchedEffect(gameState?.status) {
-        Log.d("Navigation", "Checking game state: ${gameState?.status}")
-
-        if (gameState?.status == "ready") {
+        if (gameState?.status == "ready" && !hasNavigated) {
+            hasNavigated = true // Prevent duplicate navigation
             Log.d("Navigation", "Game is ready, navigating...")
 
             val screen =
                 if (playerName == gameState?.players?.keys?.first()) "onlineMultiplayerGame"
                 else "onlineOpponentMultiplayerGame"
 
-            navController.navigate("$screen/$gameId/$playerName")
+            navController.navigate("$screen/$gameId/$playerName") {
+                popUpTo("readyScreen/$gameId/$playerName") { inclusive = true }
+            }
         }
     }
 
@@ -194,6 +196,8 @@ fun ReadyScreen(navController: NavController, gameId: String, playerName: String
         }
     }
 }
+
+
 
 
 

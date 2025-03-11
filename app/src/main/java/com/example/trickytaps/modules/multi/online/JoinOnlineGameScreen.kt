@@ -32,6 +32,7 @@ fun JoinOnlineGameScreen(navController: NavController, playerName: String) {
     val availableGames by viewModel.availableGames.collectAsState()
 
     var gameId by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current  // Capture the context here once
 
     // Fetch available games when the screen is launched
     LaunchedEffect(Unit) {
@@ -73,11 +74,10 @@ fun JoinOnlineGameScreen(navController: NavController, playerName: String) {
                         playerCount = game.playerCount,
                         onClick = {
                             gameId = game.gameId
-                            // Join the game by calling joinGame() in ViewModel
-                            viewModel.joinGame(game.gameId, playerName)
-
-                            // Navigate to the Ready Screen
-                            navController.navigate("readyScreen/$gameId/$playerName")
+                            if (gameId != null) {
+                                // Call the joinGame method
+                                viewModel.joinGame(game.gameId, playerName, context, navController)
+                            }
                         }
                     )
                 }
@@ -85,7 +85,6 @@ fun JoinOnlineGameScreen(navController: NavController, playerName: String) {
         }
     }
 }
-
 
 
 @Composable
@@ -128,6 +127,7 @@ fun GameCard(gameId: String, playerCount: Int, onClick: () -> Unit) {
         }
     }
 }
+
 
 @Composable
 fun ReadyScreen(navController: NavController, gameId: String, playerName: String) {

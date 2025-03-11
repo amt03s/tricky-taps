@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
@@ -24,45 +25,32 @@ fun OnlineMultiplayerGameScreen(
 ) {
     val viewModel: OnlineMultiplayerViewModel = viewModel()
     val gameState by viewModel.gameState.collectAsState()
+    val playerScore by viewModel.playerScore.collectAsState()
+    val timer by viewModel.timer.collectAsState() // Observe the timer
+    val gameOver by viewModel.gameOver.collectAsState() // Observe game over state
 
     // Listen for game updates
     LaunchedEffect(gameId) {
         viewModel.listenForGameUpdates(gameId) { secondPlayerName ->
-            // If second player name is updated, show it
-            if (secondPlayerName != null) {
-                Log.d("OnlineMultiplayerGameScreen", "Second player joined: $secondPlayerName")
-            }
+            Log.d("Game", "Second player joined: $secondPlayerName")
         }
     }
 
-    // Show loading screen while waiting for game state
-    if (gameState == null) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            CircularProgressIndicator()
-            Text(text = "Waiting for the game to start...", fontSize = 20.sp)
+    // Fetch the player's score when the game starts
+    LaunchedEffect(gameId, playerName) {
+        viewModel.getPlayerScore(gameId, playerName) { score ->
+            viewModel.updateScore(gameId, playerName, score)  // Update the score in the ViewModel
         }
+
+        // Start the 45-second game timer
+        viewModel.startGameTimer()
+    }
+
+    // If the game is over, show the Game Over screen
+    if (gameOver) {
+        GameOverScreen(navController, gameState!!, viewModel) // Pass the viewModel here
     } else {
-        // Extract data from game state
-        val players = gameState!!.players
-        val status = gameState!!.status
-        val currentQuestion = gameState!!.currentQuestion
-
-        // Check if both players are ready
-        val bothPlayersReady = players.values.all { it.isReady }
-
-        if (bothPlayersReady && status != "ready") {
-            // If both players are ready, update the status and navigate to the game screen
-            viewModel.updatePlayerReadyStatus(gameId, playerName, true)
-            viewModel.updatePlayerReadyStatus(gameId, gameState!!.players.keys.first { it != playerName }, true) // Update second player
-
-            // Update the game status to "ready"
-            viewModel.updateGameStatus(gameId, "ready")
-        }
-
+        // Show loading screen while waiting for game state
         if (gameState == null) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -70,7 +58,7 @@ fun OnlineMultiplayerGameScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 CircularProgressIndicator()
-                Text(text = "Waiting for the game to start...", fontSize = 20.sp)
+                Text(text = "Waiting for game to start...", fontSize = 20.sp)
             }
         } else {
             // Extract data from game state
@@ -81,17 +69,13 @@ fun OnlineMultiplayerGameScreen(
             // Check if both players are ready
             val bothPlayersReady = players.values.all { it.isReady }
 
-            // Update the game status to "ready" when both players are ready
             if (bothPlayersReady && status != "ready") {
                 viewModel.updatePlayerReadyStatus(gameId, playerName, true)
-                viewModel.updatePlayerReadyStatus(gameId, gameState!!.players.keys.first { it != playerName }, true) // Update second player
-
-                // Update the game status to "ready" after both players are ready
+                viewModel.updatePlayerReadyStatus(gameId, gameState!!.players.keys.first { it != playerName }, true)
                 viewModel.updateGameStatus(gameId, "ready")
             }
 
-            // Ensure that the question is available before proceeding to the game screen
-            if (gameState!!.status == "ready" && currentQuestion != null) {
+            if (gameState!!.status == "ready") {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -112,13 +96,22 @@ fun OnlineMultiplayerGameScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Score: ${players[playerName]?.score ?: 0}",
+                        text = "Score: $playerScore",
                         fontSize = 20.sp
                     )
 
                     Spacer(modifier = Modifier.height(30.dp))
 
-                    // Display the current question
+                    // Timer
+                    Text(
+                        text = "Time Remaining: $timer seconds",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Red
+                    )
+
+                    Spacer(modifier = Modifier.height(30.dp))
+
                     Text(
                         text = currentQuestion?.question ?: "No question available",
                         fontSize = 22.sp,
@@ -127,7 +120,7 @@ fun OnlineMultiplayerGameScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Display the answer options
+                    // Use AnswerButton composable here
                     currentQuestion?.options?.let { options ->
                         Column(
                             modifier = Modifier.fillMaxWidth(),
@@ -144,110 +137,33 @@ fun OnlineMultiplayerGameScreen(
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(30.dp))
+
+                    Button(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.fillMaxWidth(0.6f)
+                    ) {
+                        Text(text = "Exit Game")
+                    }
                 }
-
-        // Proceed to the respective game screen if both players are ready
-//        if (gameState!!.status == "ready") {
-//            // Ensure that the question is available before navigating
-//            if (currentQuestion != null) {
-//                navController.navigate("onlineMultiplayerGame/${gameState!!.gameId}/${playerName}")
-//            } else {
-//                // If no question available, display a fallback message
-//                Column(
-//                    modifier = Modifier.fillMaxSize().padding(16.dp),
-//                    horizontalAlignment = Alignment.CenterHorizontally,
-//                    verticalArrangement = Arrangement.Center
-//                ) {
-//                    Text(
-//                        text = "Waiting for question to load...",
-//                        fontSize = 20.sp,
-//                        fontWeight = FontWeight.Bold
-//                    )
-//                }
-//            }
-//        } else {
-//            // Display the waiting screen
-//            Column(
-//                modifier = Modifier.fillMaxSize().padding(16.dp),
-//                horizontalAlignment = Alignment.CenterHorizontally,
-//                verticalArrangement = Arrangement.Center
-//            ) {
-//                Text(
-//                    text = "Waiting for other player to be ready",
-//                    fontSize = 20.sp,
-//                    fontWeight = FontWeight.Bold
-//                )
-//            }
-//        }
-//
-//        // Display the game content
-//        if (currentQuestion != null) {
-//            Column(
-//                modifier = Modifier.fillMaxSize().padding(16.dp),
-//                horizontalAlignment = Alignment.CenterHorizontally,
-//                verticalArrangement = Arrangement.Top
-//            ) {
-//                Text(
-//                    text = "Game Status: $status",
-//                    fontSize = 18.sp,
-//                    fontWeight = FontWeight.Bold
-//                )
-//
-//                Spacer(modifier = Modifier.height(20.dp))
-//
-//                // Show the player's name and score
-//                Text(
-//                    text = "Player: $playerName",
-//                    fontSize = 24.sp,
-//                    fontWeight = FontWeight.Bold
-//                )
-//                Text(
-//                    text = "Score: ${players[playerName]?.score ?: 0}",
-//                    fontSize = 20.sp
-//                )
-//
-//                Spacer(modifier = Modifier.height(30.dp))
-//
-//                // Display the current question
-//                Text(
-//                    text = currentQuestion?.question ?: "No question available",
-//                    fontSize = 22.sp,
-//                    fontWeight = FontWeight.Bold
-//                )
-//
-//                Spacer(modifier = Modifier.height(20.dp))
-//
-//                // Display the answer options
-//                currentQuestion?.options?.let { options ->
-//                    Column(
-//                        modifier = Modifier.fillMaxWidth(),
-//                        horizontalAlignment = Alignment.CenterHorizontally
-//                    ) {
-//                        options.forEach { option ->
-//                            AnswerButton(
-//                                option = option,
-//                                correctAnswer = currentQuestion.correctAnswer,
-//                                gameId = gameId,
-//                                playerName = playerName,
-//                                viewModel = viewModel
-//                            )
-//                        }
-//                    }
-//                }
-
-                Spacer(modifier = Modifier.height(30.dp))
-
-                // Button to leave the game or go back
-                Button(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.fillMaxWidth(0.6f)
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text(text = "Exit Game")
+                    Text(
+                        text = "Waiting for the other player to be ready",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun AnswerButton(
@@ -259,17 +175,14 @@ fun AnswerButton(
 ) {
     Button(
         onClick = {
-            // Check if the answer is correct or incorrect
+            // Check if the answer is correct
             if (option == correctAnswer) {
-                viewModel.updateScore(gameId, playerName, 10) // Add score for correct answer
-            } else {
-                viewModel.updateScore(gameId, playerName, -5) // Deduct score for incorrect answer
+                viewModel.updateScore(gameId, playerName, 10)  // Add points for correct answer
             }
+            // Generate the next question
+            val newQuestion = generateTrickQuestion()  // Get a new random question
 
-            // Generate the next question from TrickQuestion (dynamically)
-            val newQuestion = generateTrickQuestion() // Get a new random question
-
-            // Update the question in the game (without storing in Firestore)
+            // Update the question in the game
             viewModel.updateQuestion(gameId)
         },
         modifier = Modifier
@@ -279,5 +192,9 @@ fun AnswerButton(
         Text(text = option)
     }
 }
+
+
+
+
 
 

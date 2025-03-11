@@ -20,7 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
-import coil.request.ImageRequest
+import com.android.volley.toolbox.ImageRequest
 import com.example.trickytaps.modules.auth.AuthScreen
 import com.example.trickytaps.modules.auth.MultiplayerAuthScreen
 import com.example.trickytaps.modules.auth.MultiplayerUsernameScreen
@@ -83,7 +83,7 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
         Column(modifier = Modifier.fillMaxSize()) {
             repeat(3) { index ->
                 AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
+                    model = coil.request.ImageRequest.Builder(LocalContext.current)
                         .data(R.drawable.bg)
                         .decoderFactory(ImageDecoderDecoder.Factory())
                         .build(),

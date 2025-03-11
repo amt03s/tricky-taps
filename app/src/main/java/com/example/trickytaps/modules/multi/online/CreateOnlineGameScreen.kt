@@ -27,6 +27,7 @@ fun CreateOnlineGameScreen(navController: NavController, playerName: String) {
     var gameId by rememberSaveable { mutableStateOf<String?>(null) }
     var isPlayerReady by remember { mutableStateOf(false) }
     var isBothPlayersReady by remember { mutableStateOf(false) }
+    var newPlayerName by remember { mutableStateOf<String?>(null) } // Store the name of the new player who joins
 
     // Ensure game creation only happens once
     LaunchedEffect(Unit) {
@@ -34,7 +35,8 @@ fun CreateOnlineGameScreen(navController: NavController, playerName: String) {
             gameId = viewModel.createGame(playerName)
 
             gameId?.let {
-                viewModel.listenForGameUpdates(it) {
+                viewModel.listenForGameUpdates(it) { playerName ->
+                    newPlayerName = playerName // Set the new player name when they join
                     val state = viewModel.gameState.value
                     if (state?.players?.values?.all { it.isReady } == true) {
                         isBothPlayersReady = true
@@ -60,6 +62,17 @@ fun CreateOnlineGameScreen(navController: NavController, playerName: String) {
             Text(text = "Waiting for player to join...", fontSize = 20.sp)
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Show the new player who joined
+            newPlayerName?.let {
+                Text(
+                    text = "$it has joined the game!",
+                    fontSize = 20.sp,
+                    color = Color.Blue,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+
+            // If the player is ready, show a "Ready" button
             if (!isPlayerReady) {
                 Button(
                     onClick = {
@@ -79,6 +92,7 @@ fun CreateOnlineGameScreen(navController: NavController, playerName: String) {
                 )
             }
 
+            // If both players are ready, navigate to the next screen
             if (isBothPlayersReady) {
                 LaunchedEffect(Unit) {
                     navController.navigate("onlineMultiplayerGame/$gameId/$playerName")

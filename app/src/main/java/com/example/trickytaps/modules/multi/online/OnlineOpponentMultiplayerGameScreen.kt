@@ -10,7 +10,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -113,10 +116,34 @@ fun OnlineOpponentMultiplayerGameScreen(
 
                     Spacer(modifier = Modifier.height(30.dp))
 
+                    // Display the current question with highlighting
                     Text(
-                        text = currentQuestion?.question ?: "No question available",
+                        text = buildAnnotatedString {
+                            val questionText = currentQuestion?.question ?: "No question available"
+                            val highlightedColor = Color.Red
+                            val regex = "\\*\\*(.*?)\\*\\*".toRegex()
+                            var lastIndex = 0
+
+                            regex.findAll(questionText).forEach { matchResult ->
+                                // Append text before the match
+                                append(questionText.substring(lastIndex, matchResult.range.first))
+
+                                // Apply color to text inside the asterisks
+                                withStyle(style = SpanStyle(color = highlightedColor)) {
+                                    append(matchResult.groupValues[1])
+                                }
+
+                                lastIndex = matchResult.range.last + 1
+                            }
+
+                            // Append remaining text after the last match
+                            if (lastIndex < questionText.length) {
+                                append(questionText.substring(lastIndex))
+                            }
+                        },
                         fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black // Default color for non-highlighted text
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))

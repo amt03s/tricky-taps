@@ -65,7 +65,7 @@ fun MultiplayerAuthScreen(navController: NavController) {
                 if (!isLogin) {
                     isLogin = true // Reset to login mode if in sign-up mode
                 } else if (isLogin) {
-                    navController.navigate("landingPage")
+                    navController.navigate("multiplayerModeSelectionScreen")
                 } else {
                     navController.popBackStack() // Go back only if already in login mode
                 }
@@ -228,6 +228,75 @@ fun multiplayerLoginUser(email: String, password: String, navController: NavCont
         }
 }
 
+@Composable
+fun MultiplayerUsernameScreen(navController: NavController, userId: String) {
+    val db = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
+    var username by remember { mutableStateOf("") }
+
+
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        // Back Button (Aligned to Top Start)
+        IconButton(
+            onClick = {
+                navController.navigate("authScreen") {
+                    popUpTo("landingPage") { inclusive = true }
+                }
+            },
+            modifier = Modifier.align(Alignment.TopStart)
+        ) {
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+        }
+
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(text = "Choose a Username", fontSize = 24.sp)
+            Spacer(modifier = Modifier.height(20.dp))
+
+            OutlinedTextField(
+                value = username,
+                onValueChange = {
+                    if (it.length <= 12 && it.matches(Regex("^[a-zA-Z0-9_]*$"))) { // Allow only letters, numbers & underscore
+                        username = it
+                    }
+                },
+                label = { Text("Username") },
+                singleLine = true,
+                maxLines = 1,
+                modifier = Modifier.fillMaxWidth(0.85f)
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = {
+                    if (username.isNotBlank()) {
+                        db.collection("users").document(userId)
+                            .set(mapOf("username" to username), SetOptions.merge())
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Username saved!", Toast.LENGTH_SHORT).show()
+                                navController.navigate("OnlineMultiplayerModeSelectionScreen/$username")
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Error saving username!", Toast.LENGTH_SHORT).show()
+                            }
+                    } else {
+                        Toast.makeText(context, "Username cannot be empty!", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(0.6f)
+            ) {
+                Text(text = "Save Username")
+            }
+        }
+    }
+}
+
 fun getMultiplayerGoogleSignInClient(context: android.content.Context): GoogleSignInClient {
     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestIdToken(context.getString(R.string.default_web_client_id)) // Request Web Client ID
@@ -236,3 +305,5 @@ fun getMultiplayerGoogleSignInClient(context: android.content.Context): GoogleSi
 
     return GoogleSignIn.getClient(context, gso)
 }
+
+

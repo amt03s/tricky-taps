@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.trickytaps.modules.auth.AuthScreen
 import com.example.trickytaps.modules.auth.MultiplayerAuthScreen
+import com.example.trickytaps.modules.auth.MultiplayerUsernameScreen
 import com.example.trickytaps.modules.auth.UsernameScreen
 import com.example.trickytaps.modules.`landing-page`.Help
 import com.example.trickytaps.modules.`landing-page`.TrickyTapsLandingPage
@@ -85,8 +86,10 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
         composable("multiplayerModeSelection") {
             MultiplayerModeSelection(navController) // Pass ViewModel
         }
-        composable("multiplayerAuth") {
-            MultiplayerAuthScreen(navController = navController)
+        composable("multiplayerAuthScreen") { MultiplayerAuthScreen(navController) }
+        composable("multiplayerUsernameScreen/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            MultiplayerUsernameScreen(navController, userId)
         }
         composable("rotateScreen/{playerCount}") { backStackEntry ->
             val playerCount = backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2

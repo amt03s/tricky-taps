@@ -2,6 +2,7 @@
 package com.example.trickytaps.modules.multi.online
 
 import android.annotation.SuppressLint
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -130,16 +131,30 @@ fun GameCard(gameId: String, playerCount: Int, onClick: () -> Unit) {
 
 @Composable
 fun ReadyScreen(navController: NavController, gameId: String, playerName: String) {
-    // Initialize ViewModel directly in the composable
     val viewModel: OnlineMultiplayerViewModel = viewModel()
+    val gameState by viewModel.gameState.collectAsState()
 
     var isReady by remember { mutableStateOf(false) }
-    var isHostReady by remember { mutableStateOf(false) }
 
-    // Listen for the host's readiness status from Firestore
+    // ✅ Listen for game updates and ensure real-time Firestore changes are captured
     LaunchedEffect(gameId) {
-        viewModel.listenForHostReadyStatus(gameId) { hostIsReady ->
-            isHostReady = hostIsReady
+        viewModel.listenForGameUpdates(gameId) {
+            Log.d("Firestore", "Game status updated: ${gameState?.status}")
+        }
+    }
+
+    // ✅ Ensure **navigation happens when Firestore confirms status = "ready"**
+    LaunchedEffect(gameState?.status) {
+        Log.d("Navigation", "Checking game state: ${gameState?.status}")
+
+        if (gameState?.status == "ready") {
+            Log.d("Navigation", "Game is ready, navigating...")
+
+            val screen =
+                if (playerName == gameState?.players?.keys?.first()) "onlineMultiplayerGame"
+                else "onlineOpponentMultiplayerGame"
+
+            navController.navigate("$screen/$gameId/$playerName")
         }
     }
 
@@ -157,22 +172,19 @@ fun ReadyScreen(navController: NavController, gameId: String, playerName: String
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        // Button to mark player as ready
-        Button(
-            onClick = {
-                // Mark the opponent as ready in Firestore
-                viewModel.updatePlayerReadyStatus(gameId, playerName, true)
-                isReady = true
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            Text(text = if (isReady) "Ready!" else "Mark as Ready")
-        }
-
-        // Show message when player is ready
-        if (isReady) {
+        if (!isReady) {
+            Button(
+                onClick = {
+                    viewModel.updatePlayerReadyStatus(gameId, playerName, true)
+                    isReady = true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Text(text = "Mark as Ready")
+            }
+        } else {
             Text(
                 text = "You are ready!",
                 fontSize = 20.sp,
@@ -180,21 +192,11 @@ fun ReadyScreen(navController: NavController, gameId: String, playerName: String
                 modifier = Modifier.padding(top = 16.dp)
             )
         }
-
-        // Proceed to the next screen only when both players are ready
-        if (isReady && isHostReady) {
-            Button(
-                onClick = {
-                    // Proceed to the multiplayer game screen once both players are ready
-                    navController.navigate("onlineOpponentMultiplayerGame/$gameId/$playerName")
-                },
-                modifier = Modifier.fillMaxWidth(0.8f)
-            ) {
-                Text(text = "Start Game")
-            }
-        }
     }
 }
+
+
+
 
 
 

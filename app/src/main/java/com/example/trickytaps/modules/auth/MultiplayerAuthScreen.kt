@@ -236,6 +236,21 @@ fun MultiplayerUsernameScreen(navController: NavController, userId: String) {
     val context = LocalContext.current
     var username by remember { mutableStateOf("") }
 
+    // List of adjectives and animals for fun username generation
+    val adjectives = listOf("Wild", "Happy", "Mighty", "Sneaky", "Charming", "Brave", "Funky", "Silly")
+    val animals = listOf("Lion", "Panda", "Tiger", "Wolf", "Penguin", "Elephant", "Koala", "Giraffe")
+    val places = listOf("Atlantis", "Wonderland", "Narnia", "Eldorado", "Oz", "Hogwarts", "Neverland")
+
+    // Function to generate a fun username
+    fun generateFunUsername(): String {
+        val randomAdjective = adjectives.random()
+        val randomAnimal = animals.random()
+        val randomPlace = places.random()
+        val randomNumber = (100..999).random()
+
+        // Combine them into a fun format
+        return "$randomAdjective$randomAnimal$randomNumber"
+    }
 
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // Back Button (Aligned to Top Start)
@@ -272,6 +287,18 @@ fun MultiplayerUsernameScreen(navController: NavController, userId: String) {
                 maxLines = 1,
                 modifier = Modifier.fillMaxWidth(0.85f)
             )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Button to generate a fun random username
+            Button(
+                onClick = {
+                    username = generateFunUsername() // Set the generated fun username
+                },
+                modifier = Modifier.fillMaxWidth(0.6f)
+            ) {
+                Text(text = "Generate Fun Username")
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
 

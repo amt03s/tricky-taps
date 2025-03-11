@@ -46,7 +46,7 @@ fun MultiplayerModeSelection(navController: NavController) {
         Button(
             onClick = {
                 // Navigate to online multiplayer screen
-                navController.navigate("multiplayerAuth")
+                navController.navigate("multiplayerAuthScreen")
             },
             modifier = Modifier
                 .fillMaxWidth(0.8f)

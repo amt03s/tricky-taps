@@ -320,19 +320,23 @@ fun firebaseAuthWithGoogle(idToken: String, navController: NavController, contex
                     db.collection("users").document(userId).get()
                         .addOnSuccessListener { document ->
                             if (document.exists()) {
-                                // User already exists, retrieve username and proceed
                                 val username = document.getString("username")
                                 if (username != null) {
-                                    navController.navigate("modeScreen/$username")
+                                    // Detect the current screen and navigate accordingly
+                                    val currentDestination = navController.currentBackStackEntry?.destination?.route
+                                    if (currentDestination?.contains("multiplayerAuthScreen") == true) {
+                                        navController.navigate("multiplayerUsernameScreen")
+                                    } else {
+                                        navController.navigate("modeScreen/$username")
+                                    }
                                 } else {
                                     navController.navigate("usernameScreen/$userId")
                                 }
                             } else {
-                                // New user, add email and initialize high scores
                                 val newUser = mapOf(
                                     "email" to email,
-                                    "easy" to 0,  // Default easy mode high score
-                                    "hard" to 0  // Default hard mode high score
+                                    "easy" to 0,
+                                    "hard" to 0
                                 )
 
                                 db.collection("users").document(userId)

@@ -109,32 +109,42 @@ class OnlineMultiplayerViewModel : ViewModel() {
 
                 snapshot?.let { doc ->
                     val players = doc.get("players") as? Map<String, Map<String, Any>> ?: emptyMap()
-                    val status = doc.getString("status")
+                    val status = doc.getString("status") ?: "waiting"
                     val currentQuestion = doc.get("currentQuestion") as? TrickQuestion
 
-                    // Update local game state when Firestore status is ready
-                    if (status == "ready") {
-                        Log.d("GameState", "Both players are ready, game status: $status")
-                        _gameState.value = _gameState.value?.copy(status = "ready", currentQuestion = currentQuestion)
-                    } else {
-                        // Update the game state without overriding the "ready" status if it's not yet "ready"
-                        _gameState.value = _gameState.value?.copy(
-                            players = players.mapValues { entry ->
-                                Player(
-                                    name = entry.key,
-                                    score = entry.value["score"] as? Int ?: 0,
-                                    isReady = entry.value["ready"] as? Boolean ?: false
-                                )
-                            },
-                            currentQuestion = currentQuestion
-                        )
+                    // Log all player readiness statuses
+                    for ((playerName, playerData) in players) {
+                        val isReady = playerData["ready"] as? Boolean ?: false
+                        Log.d("Firestore", "Player: $playerName, Ready: $isReady")
                     }
 
-                    // If second player joins, we need to trigger the update to reflect that
+                    // Check if both players are ready
+                    val allReady = players.values.all { it["ready"] == true }
+                    Log.d("Firestore", "Are all players ready? $allReady")
+
+                    // Update the game status if all players are ready
+                    if (allReady) {
+                        updateGameStatus(gameId, "ready")
+                        Log.d("Firestore", "Game status updated to READY!")
+                    }
+
+                    _gameState.value = _gameState.value?.copy(
+                        players = players.mapValues { entry ->
+                            Player(
+                                name = entry.key,
+                                score = entry.value["score"] as? Int ?: 0,
+                                isReady = entry.value["ready"] as? Boolean ?: false
+                            )
+                        },
+                        status = status,
+                        currentQuestion = currentQuestion
+                    )
+
+                    // If a second player joins, notify
                     val secondPlayerName = players.keys.firstOrNull { it != _gameState.value?.players?.keys?.first() }
                     secondPlayerName?.let {
                         Log.d("GameState", "Second player joined: $it")
-                        onSecondPlayerJoined(it) // Call the callback for second player
+                        onSecondPlayerJoined(it)
                     }
                 }
             }
@@ -145,25 +155,23 @@ class OnlineMultiplayerViewModel : ViewModel() {
         viewModelScope.launch {
             firebaseFirestoreService.updatePlayerReadyStatus(gameId, playerName, isReady)
 
-            _gameState.value?.let { game ->
-                val updatedPlayer = game.players[playerName]?.copy(isReady = isReady)
-                if (updatedPlayer != null) {
-                    val updatedPlayers = game.players.toMutableMap()
-                    updatedPlayers[playerName] = updatedPlayer
+            val db = FirebaseFirestore.getInstance()
+            val gameRef = db.collection("games").document(gameId)
 
-                    // Check if both players are ready
-                    val allReady = updatedPlayers.values.all { it.isReady }
+            gameRef.get().addOnSuccessListener { document ->
+                val players = document.get("players") as? Map<String, Map<String, Any>> ?: emptyMap()
 
-                    // If both players are ready, set the status to "ready"
-                    if (allReady) {
-                        // Ensure the game status is updated to "ready"
-                        updateGameStatusToReady(gameId)
+                val allReady = players.values.all { (it["ready"] as? Boolean) == true }
 
-                        // Now update local game state with "ready"
-                        _gameState.value = game.copy(status = "ready", players = updatedPlayers)
-                    } else {
-                        _gameState.value = game.copy(players = updatedPlayers)
-                    }
+                if (allReady) {
+                    gameRef.update("status", "ready")
+                        .addOnSuccessListener {
+                            Log.d("Firestore", "Game status updated to 'ready'")
+                            _gameState.value = _gameState.value?.copy(status = "ready")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("Firestore", "Error updating game status", e)
+                        }
                 }
             }
         }
@@ -179,4 +187,62 @@ class OnlineMultiplayerViewModel : ViewModel() {
             }
         }
     }
+
+    // Update the player's score in Firestore
+    fun updateScore(gameId: String, playerName: String, scoreChange: Int) {
+        viewModelScope.launch {
+            val db = FirebaseFirestore.getInstance()
+            val gameRef = db.collection("games").document(gameId)
+
+            gameRef.get().addOnSuccessListener { document ->
+                val players = document.get("players") as? MutableMap<String, Map<String, Any>> ?: return@addOnSuccessListener
+                val currentScore = players[playerName]?.get("score") as? Long ?: 0
+                val newScore = currentScore + scoreChange
+
+                // Update the score in Firestore
+                gameRef.update("players.$playerName.score", newScore)
+                    .addOnSuccessListener {
+                        Log.d("Firestore", "Score updated successfully for $playerName")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("Firestore", "Error updating score", e)
+                    }
+            }
+        }
+    }
+
+    // Update the question in Firestore
+    fun updateQuestion(gameId: String) {
+        viewModelScope.launch {
+            val newQuestion = generateTrickQuestion()
+
+            val db = FirebaseFirestore.getInstance()
+            val gameRef = db.collection("games").document(gameId)
+
+            gameRef.update("currentQuestion", newQuestion)
+                .addOnSuccessListener {
+                    Log.d("Firestore", "Question updated successfully")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Error updating question", e)
+                }
+        }
+    }
+
+    // Update game status in Firestore
+    fun updateGameStatus(gameId: String, newStatus: String) {
+        viewModelScope.launch {
+            val db = FirebaseFirestore.getInstance()
+            val gameRef = db.collection("games").document(gameId)
+
+            gameRef.update("status", newStatus)
+                .addOnSuccessListener {
+                    Log.d("Firestore", "Game status updated to $newStatus")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Firestore", "Error updating game status", e)
+                }
+        }
+    }
+
 }

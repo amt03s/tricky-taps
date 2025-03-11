@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
@@ -122,7 +123,8 @@ fun OnlineMultiplayerGameScreen(
                     Text(
                         text = currentQuestion?.question ?: "No question available",
                         fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = currentQuestion?.displayedColor ?: Color.Black  // Apply color here
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -145,96 +147,6 @@ fun OnlineMultiplayerGameScreen(
                         }
                     }
                 }
-
-        // Proceed to the respective game screen if both players are ready
-//        if (gameState!!.status == "ready") {
-//            // Ensure that the question is available before navigating
-//            if (currentQuestion != null) {
-//                navController.navigate("onlineMultiplayerGame/${gameState!!.gameId}/${playerName}")
-//            } else {
-//                // If no question available, display a fallback message
-//                Column(
-//                    modifier = Modifier.fillMaxSize().padding(16.dp),
-//                    horizontalAlignment = Alignment.CenterHorizontally,
-//                    verticalArrangement = Arrangement.Center
-//                ) {
-//                    Text(
-//                        text = "Waiting for question to load...",
-//                        fontSize = 20.sp,
-//                        fontWeight = FontWeight.Bold
-//                    )
-//                }
-//            }
-//        } else {
-//            // Display the waiting screen
-//            Column(
-//                modifier = Modifier.fillMaxSize().padding(16.dp),
-//                horizontalAlignment = Alignment.CenterHorizontally,
-//                verticalArrangement = Arrangement.Center
-//            ) {
-//                Text(
-//                    text = "Waiting for other player to be ready",
-//                    fontSize = 20.sp,
-//                    fontWeight = FontWeight.Bold
-//                )
-//            }
-//        }
-//
-//        // Display the game content
-//        if (currentQuestion != null) {
-//            Column(
-//                modifier = Modifier.fillMaxSize().padding(16.dp),
-//                horizontalAlignment = Alignment.CenterHorizontally,
-//                verticalArrangement = Arrangement.Top
-//            ) {
-//                Text(
-//                    text = "Game Status: $status",
-//                    fontSize = 18.sp,
-//                    fontWeight = FontWeight.Bold
-//                )
-//
-//                Spacer(modifier = Modifier.height(20.dp))
-//
-//                // Show the player's name and score
-//                Text(
-//                    text = "Player: $playerName",
-//                    fontSize = 24.sp,
-//                    fontWeight = FontWeight.Bold
-//                )
-//                Text(
-//                    text = "Score: ${players[playerName]?.score ?: 0}",
-//                    fontSize = 20.sp
-//                )
-//
-//                Spacer(modifier = Modifier.height(30.dp))
-//
-//                // Display the current question
-//                Text(
-//                    text = currentQuestion?.question ?: "No question available",
-//                    fontSize = 22.sp,
-//                    fontWeight = FontWeight.Bold
-//                )
-//
-//                Spacer(modifier = Modifier.height(20.dp))
-//
-//                // Display the answer options
-//                currentQuestion?.options?.let { options ->
-//                    Column(
-//                        modifier = Modifier.fillMaxWidth(),
-//                        horizontalAlignment = Alignment.CenterHorizontally
-//                    ) {
-//                        options.forEach { option ->
-//                            AnswerButton(
-//                                option = option,
-//                                correctAnswer = currentQuestion.correctAnswer,
-//                                gameId = gameId,
-//                                playerName = playerName,
-//                                viewModel = viewModel
-//                            )
-//                        }
-//                    }
-//                }
-
                 Spacer(modifier = Modifier.height(30.dp))
 
                 // Button to leave the game or go back

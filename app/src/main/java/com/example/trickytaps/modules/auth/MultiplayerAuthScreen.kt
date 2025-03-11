@@ -65,7 +65,7 @@ fun MultiplayerAuthScreen(navController: NavController) {
                 if (!isLogin) {
                     isLogin = true // Reset to login mode if in sign-up mode
                 } else if (isLogin) {
-                    navController.navigate("multiplayerModeSelectionScreen")
+                    navController.navigate("multiplayerModeSelection")
                 } else {
                     navController.popBackStack() // Go back only if already in login mode
                 }
@@ -239,7 +239,7 @@ fun MultiplayerUsernameScreen(navController: NavController, userId: String) {
         // Back Button (Aligned to Top Start)
         IconButton(
             onClick = {
-                navController.navigate("authScreen") {
+                navController.navigate("multiplayerAuthScreen") {
                     popUpTo("landingPage") { inclusive = true }
                 }
             },

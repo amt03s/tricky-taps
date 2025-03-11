@@ -116,9 +116,11 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
                     mode
                 )
             }
+
             composable("multiplayerModeSelectionScreen") {
                 MultiplayerModeSelectionScreen(navController, viewModel) // Pass ViewModel
             }
+
             composable("OnlineMultiplayerModeSelectionScreen") {
                 OnlineMultiplayerModeSelectionScreen(navController = navController)
             }
@@ -126,6 +128,7 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
             composable("multiplayerModeSelection") {
                 MultiplayerModeSelection(navController) // Pass ViewModel
             }
+
             composable("multiplayerAuthScreen") { MultiplayerAuthScreen(navController) }
             composable("multiplayerUsernameScreen/{userId}") { backStackEntry ->
                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
@@ -145,9 +148,7 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
                 UsernameScreen(navController, userId)
             }
-            composable("multiplayerModeSelection") {
-                MultiplayerModeSelectionScreen(navController, viewModel) // Pass ViewModel
-            }
+
             composable("rotateScreen/{playerCount}") { backStackEntry ->
                 val playerCount =
                     backStackEntry.arguments?.getString("playerCount")?.toInt() ?: 2

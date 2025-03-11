@@ -63,7 +63,7 @@ fun MultiplayerModeSelectionScreen(navController: NavController, viewModel: Mult
         // Back Button (Aligned to Top Start)
         IconButton(
             onClick = {
-                navController.navigate("landingPage") {
+                navController.navigate("multiplayerModeSelection") {
                     popUpTo("authScreen") { inclusive = true }
                 }
             },

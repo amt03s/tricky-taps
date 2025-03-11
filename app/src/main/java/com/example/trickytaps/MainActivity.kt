@@ -20,7 +20,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
-import com.android.volley.toolbox.ImageRequest
 import com.example.trickytaps.modules.auth.AuthScreen
 import com.example.trickytaps.modules.auth.MultiplayerAuthScreen
 import com.example.trickytaps.modules.auth.MultiplayerUsernameScreen
@@ -120,10 +119,10 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
             composable("multiplayerModeSelectionScreen") {
                 MultiplayerModeSelectionScreen(navController, viewModel) // Pass ViewModel
             }
-
-            composable("OnlineMultiplayerModeSelectionScreen") {
-                OnlineMultiplayerModeSelectionScreen(navController = navController)
-            }
+//
+//            composable("OnlineMultiplayerModeSelectionScreen") {
+//                OnlineMultiplayerModeSelectionScreen(navController = navController)
+//            }
 
             composable("multiplayerModeSelection") {
                 MultiplayerModeSelection(navController) // Pass ViewModel

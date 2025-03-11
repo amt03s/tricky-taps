@@ -18,6 +18,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+
 
 class OnlineMultiplayerViewModel : ViewModel() {
     private val firebaseFirestoreService = FirebaseFirestoreService()
@@ -48,6 +53,17 @@ class OnlineMultiplayerViewModel : ViewModel() {
         firebaseFirestoreService.fetchAvailableGames { games ->
             Log.d("ViewModel", "Fetched games: ${games.size}")
             _availableGames.value = games
+        }
+    }
+
+    // ✅ New suspend function using coroutines
+    suspend fun getPlayerScoreSuspend(gameId: String, playerName: String): Int {
+        return withContext(Dispatchers.IO) {
+            suspendCancellableCoroutine { continuation ->
+                getPlayerScore(gameId, playerName) { score ->
+                    continuation.resume(score) // ✅ Resume coroutine with result
+                }
+            }
         }
     }
 

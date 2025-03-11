@@ -116,35 +116,39 @@ fun OnlineOpponentMultiplayerGameScreen(
 
                     Spacer(modifier = Modifier.height(30.dp))
 
-                    // Display the current question with highlighting
-                    Text(
-                        text = buildAnnotatedString {
-                            val questionText = currentQuestion?.question ?: "No question available"
-                            val highlightedColor = Color.Red
-                            val regex = "\\*\\*(.*?)\\*\\*".toRegex()
-                            var lastIndex = 0
+            // Display the current question
+            Text(
+//                text = currentQuestion?.question ?: "No question available",
+//                fontSize = 22.sp,
+//                fontWeight = FontWeight.Bold
+//            )
+                text = buildAnnotatedString {
+                    val questionText = currentQuestion?.question ?: "No question available"
+                    val highlightedColor = Color.Red
+                    val regex = "\\*\\*(.*?)\\*\\*".toRegex()
+                    var lastIndex = 0
 
-                            regex.findAll(questionText).forEach { matchResult ->
-                                // Append text before the match
-                                append(questionText.substring(lastIndex, matchResult.range.first))
+                    regex.findAll(questionText).forEach { matchResult ->
+                        // Append text before the match
+                        append(questionText.substring(lastIndex, matchResult.range.first))
 
-                                // Apply color to text inside the asterisks
-                                withStyle(style = SpanStyle(color = highlightedColor)) {
-                                    append(matchResult.groupValues[1])
-                                }
+                        // Apply color to text inside the asterisks
+                        withStyle(style = SpanStyle(color = highlightedColor)) {
+                            append(matchResult.groupValues[1])
+                        }
 
-                                lastIndex = matchResult.range.last + 1
-                            }
+                        lastIndex = matchResult.range.last + 1
+                    }
 
-                            // Append remaining text after the last match
-                            if (lastIndex < questionText.length) {
-                                append(questionText.substring(lastIndex))
-                            }
-                        },
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black // Default color for non-highlighted text
-                    )
+                    // Append remaining text after the last match
+                    if (lastIndex < questionText.length) {
+                        append(questionText.substring(lastIndex))
+                    }
+                },
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black // Default color for non-highlighted text
+            )
 
                     Spacer(modifier = Modifier.height(20.dp))
 
@@ -176,7 +180,7 @@ fun OnlineOpponentMultiplayerGameScreen(
                     Spacer(modifier = Modifier.height(30.dp))
 
                     Button(
-                        onClick = { navController.popBackStack() },
+                        onClick = { navController.navigate("onlineMultiplayerModeSelection") },
                         modifier = Modifier.fillMaxWidth(0.6f)
                     ) {
                         Text(text = "Exit Game")

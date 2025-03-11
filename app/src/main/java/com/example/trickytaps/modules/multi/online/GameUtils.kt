@@ -13,22 +13,40 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.*
 
-// Modified GameOverScreen to accept viewModel as a parameter
 @Composable
 fun GameOverScreen(navController: NavController, gameState: GameState, viewModel: OnlineMultiplayerViewModel) {
     var winner by remember { mutableStateOf("No Winner") }
+    var deleteCompleted by remember { mutableStateOf(false) }
 
-    // Fetch winner asynchronously
+    // ✅ Fetch winner asynchronously using coroutine
     LaunchedEffect(gameState) {
-        getWinner(gameState, viewModel) { determinedWinner ->
-            winner = determinedWinner
+        winner = try {
+            getWinner(gameState, viewModel) // Use the suspend function
+        } catch (e: Exception) {
+            Log.e("GameOverScreen", "Failed to get winner: ${e.message}")
+            "Error"
         }
     }
 
-    // Display the Game Over screen
+    // ✅ Handle navigation after session deletion
+    LaunchedEffect(deleteCompleted) {
+        if (deleteCompleted) {
+            try {
+                navController.navigate("onlineMultiplayerModeSelection") {
+                    popUpTo("onlineMultiplayerModeSelection") { inclusive = false }
+                }
+            } catch (e: Exception) {
+                Log.e("GameOverScreen", "Navigation failed: ${e.message}")
+            }
+        }
+    }
+
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -51,13 +69,15 @@ fun GameOverScreen(navController: NavController, gameState: GameState, viewModel
 
         Button(
             onClick = {
-                // Navigate back to the OnlineMultiplayerModeSelectionScreen instead of just popping the back stack
-                navController.navigate("OnlineMultiplayerModeSelectionScreen") {
-                    // Pop the back stack to remove all previous destinations, ensuring that the user cannot return to the game screen
-                    popUpTo("OnlineMultiplayerModeSelectionScreen") { inclusive = true }
+                CoroutineScope(Dispatchers.Main).launch {
+                    try {
+                        viewModel.deleteGameSession(gameState.gameId) // Delete game session
+                        Log.d("GameOverScreen", "Game session deleted for ID: ${gameState.gameId}")
+                        deleteCompleted = true
+                    } catch (e: Exception) {
+                        Log.e("GameOverScreen", "Failed to delete session: ${e.message}")
+                    }
                 }
-                // Call this after the user exits
-                viewModel.deleteGameSession(gameState.gameId)
             },
             modifier = Modifier.fillMaxWidth(0.6f)
         ) {
@@ -66,26 +86,22 @@ fun GameOverScreen(navController: NavController, gameState: GameState, viewModel
     }
 }
 
-// Helper function to determine the winner
-fun getWinner(gameState: GameState, viewModel: OnlineMultiplayerViewModel, onWinnerDetermined: (String) -> Unit) {
-    val playerNames = gameState.players.keys.toList()
-    val playerName1 = playerNames[0]
-    val playerName2 = playerNames[1]
+// ✅ Suspend function to determine the winner using coroutines
+suspend fun getWinner(gameState: GameState, viewModel: OnlineMultiplayerViewModel): String {
+    return withContext(Dispatchers.IO) {
+        try {
+            val playerNames = gameState.players.keys.toList()
+            val playerName1 = playerNames[0]
+            val playerName2 = playerNames[1]
 
-    var player1Score = 0
-    var player2Score = 0
+            // Use the suspend version of getPlayerScore()
+            val player1Score = viewModel.getPlayerScoreSuspend(gameState.gameId, playerName1)
+            val player2Score = viewModel.getPlayerScoreSuspend(gameState.gameId, playerName2)
 
-    // Fetch player 1 score
-    viewModel.getPlayerScore(gameState.gameId, playerName1) { score1 ->
-        player1Score = score1
-
-        // Fetch player 2 score
-        viewModel.getPlayerScore(gameState.gameId, playerName2) { score2 ->
-            player2Score = score2
-
-            // Determine the winner based on the scores
-            val winner = if (player1Score > player2Score) playerName1 else playerName2
-            onWinnerDetermined(winner) // Trigger the callback with the winner's name
+            if (player1Score > player2Score) playerName1 else playerName2
+        } catch (e: Exception) {
+            Log.e("GameOverScreen", "Failed to determine winner: ${e.message}")
+            "Unknown"
         }
     }
 }

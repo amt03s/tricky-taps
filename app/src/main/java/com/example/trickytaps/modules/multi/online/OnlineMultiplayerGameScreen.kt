@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +21,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.trickytaps.generateTrickQuestion
+import com.example.trickytaps.modules.single.PauseDialog
 
 @Composable
 fun OnlineMultiplayerGameScreen(
@@ -102,9 +105,7 @@ fun OnlineMultiplayerGameScreen(
                         text = "Score: $playerScore",
                         fontSize = 20.sp
                     )
-
                     Spacer(modifier = Modifier.height(30.dp))
-
                     // Timer
                     Text(
                         text = "Time Remaining: $timer seconds",
@@ -115,8 +116,12 @@ fun OnlineMultiplayerGameScreen(
 
                     Spacer(modifier = Modifier.height(30.dp))
 
-                    // Display the current question with highlighting
+                    // Display the current question
                     Text(
+//                        text = currentQuestion?.question ?: "No question available",
+//                        fontSize = 22.sp,
+//                        fontWeight = FontWeight.Bold,
+//                        color = currentQuestion?.displayedColor ?: Color.Black  // Apply color here
                         text = buildAnnotatedString {
                             val questionText = currentQuestion?.question ?: "No question available"
                             val highlightedColor = Color.Red
@@ -165,10 +170,10 @@ fun OnlineMultiplayerGameScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(30.dp))
 
                     Button(
-                        onClick = { navController.popBackStack() },
+                        onClick = { navController.navigate("onlineMultiplayerModeSelection") },
                         modifier = Modifier.fillMaxWidth(0.6f)
                     ) {
                         Text(text = "Exit Game")
@@ -190,7 +195,6 @@ fun OnlineMultiplayerGameScreen(
         }
     }
 }
-
 
 @Composable
 fun AnswerButton(
@@ -219,9 +223,5 @@ fun AnswerButton(
         Text(text = option)
     }
 }
-
-
-
-
 
 

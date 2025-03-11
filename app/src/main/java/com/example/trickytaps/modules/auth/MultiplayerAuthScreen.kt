@@ -79,8 +79,10 @@ fun MultiplayerAuthScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
-                .align(Alignment.Center)  // Center the Column inside the Box
+                .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+                //.align(Alignment.Center)  // Center the Column inside the Box
         ) {
             Text(
                 text = if (isLogin) "Multiplayer Login" else "Multiplayer Sign Up",
@@ -213,7 +215,7 @@ fun multiplayerLoginUser(email: String, password: String, navController: NavCont
                         val username = document.getString("username")
                         if (username != null) {
                             Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
-                            navController.navigate("OnlineMultiplayerModeSelectionScreen")
+                            navController.navigate("onlineMultiplayerModeSelection")
                         } else {
                             Toast.makeText(context, "Username not found, please set it up.", Toast.LENGTH_SHORT).show()
                             navController.navigate("usernameScreen/$userId")

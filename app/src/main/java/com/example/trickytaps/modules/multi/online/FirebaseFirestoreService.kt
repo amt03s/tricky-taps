@@ -2,29 +2,12 @@
 package com.example.trickytaps.modules.multi.online
 
 import android.util.Log
+import com.example.trickytaps.TrickQuestion
 import com.google.firebase.firestore.FirebaseFirestore
 
 class FirebaseFirestoreService {
     private val db = FirebaseFirestore.getInstance()
 
-    // Create Game
-    fun createGame(playerName: String): String {
-        val gameId = db.collection("games").document().id
-        val gameData = hashMapOf(
-            "status" to "waiting", // Ensure status is a String
-            "players" to hashMapOf(
-                playerName to hashMapOf( // Use playerName directly as the key
-                    "name" to playerName,
-                    "score" to 0,
-                    "ready" to false
-                )
-            )
-        )
-
-        // Store the game data in Firestore under the 'games' collection
-        db.collection("games").document(gameId).set(gameData)
-        return gameId
-    }
 
     // Join Game
     fun joinGame(gameId: String, playerName: String, playerData: Map<String, Any>) {
@@ -35,6 +18,28 @@ class FirebaseFirestoreService {
         // Optionally, you can listen for updates here, to trigger changes when a player joins
     }
 
+    fun createGame(playerName: String): String {
+        val gameId = db.collection("games").document().id // Generate unique game ID
+        val gameData = hashMapOf(
+            "status" to "waiting",  // Set the game status to "waiting"
+            "players" to hashMapOf(
+                playerName to hashMapOf(
+                    "name" to playerName,
+                    "score" to 0,
+                    "ready" to false
+                )
+            )
+        )
+
+        // Create the game in Firestore
+        db.collection("games").document(gameId).set(gameData)
+        Log.d("Firestore", "Game created with ID: $gameId")
+        Log.d("Firestore", "createGame method called") // Add this for debugging
+
+
+        // Return the generated game ID
+        return gameId
+    }
 
 
 
@@ -119,6 +124,44 @@ class FirebaseFirestoreService {
                 Log.e("Firestore", "Error updating player ready status: ${e.message}")
             }
     }
+
+    fun updateQuestion(gameId: String, newQuestion: TrickQuestion) {
+        // Update the Firestore document with the new question
+        db.collection("games").document(gameId)
+            .update("currentQuestion", newQuestion)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Question updated successfully!")
+            }
+            .addOnFailureListener { exception ->
+                Log.e("Firestore", "Error updating question", exception)
+            }
+    }
+
+    fun updateGameStatus(gameId: String, status: String) {
+        db.collection("games").document(gameId)
+            .update("status", status)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Game status updated successfully to: $status")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error updating game status", e)
+            }
+    }
+
+    fun updateGameStatusToReady(gameId: String) {
+        // Get a reference to the game document in Firestore
+        val gameRef = db.collection("games").document(gameId)
+
+        // Update the status field to "ready"
+        gameRef.update("status", "ready")
+            .addOnSuccessListener {
+                Log.d("Firestore", "Game status updated to 'ready' successfully.")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error updating game status", e)
+            }
+    }
+
 
 
 }

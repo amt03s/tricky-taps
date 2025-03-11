@@ -1,22 +1,25 @@
 // OnlineMultiplayerViewmodel.kt
+// OnlineMultiplayerViewModel.kt
 package com.example.trickytaps.modules.multi.online
 
 import android.util.Log
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.launch
 import com.example.trickytaps.TrickQuestion
 import com.example.trickytaps.generateTrickQuestion
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class OnlineMultiplayerViewModel : ViewModel() {
     private val firebaseFirestoreService = FirebaseFirestoreService()
 
-    private val _gameState = MutableStateFlow<Game?>(null)
-    val gameState: StateFlow<Game?> = _gameState
+    // Make _gameState mutable internally
+    private val _gameState = MutableStateFlow<GameState?>(null)
+
+    // Expose gameState as immutable StateFlow to the outside world
+    val gameState: StateFlow<GameState?> = _gameState
 
     private val _gameId = MutableStateFlow<String?>(null)
     val gameId: StateFlow<String?> = _gameId
@@ -27,64 +30,71 @@ class OnlineMultiplayerViewModel : ViewModel() {
     // Fetch available games from Firestore
     fun fetchAvailableGames() {
         firebaseFirestoreService.fetchAvailableGames { games ->
-            Log.d("ViewModel", "Fetched games: ${games.size}")  // Log the size of fetched games
-            _availableGames.value = games // This triggers the UI to update
+            Log.d("ViewModel", "Fetched games: ${games.size}")
+            _availableGames.value = games
         }
     }
 
+    // Listen for the Host's ready status
+    fun listenForHostReadyStatus(gameId: String, onHostReady: (Boolean) -> Unit) {
+        val db = FirebaseFirestore.getInstance()
 
-    // Create Game
+        db.collection("games").document(gameId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("Firestore", "Error listening for game updates", error)
+                    return@addSnapshotListener
+                }
+
+                snapshot?.let {
+                    val players = it.get("players") as? Map<String, Map<String, Any>> ?: emptyMap()
+                    val hostReady = players["host"]?.get("ready") as? Boolean ?: false
+                    onHostReady(hostReady)
+                }
+            }
+    }
+
+    // Create a new game
     fun createGame(playerName: String): String {
-        // Create a new game and add Player 1 (the host)
+        Log.d("ViewModel", "createGame method in ViewModel triggered")
         val gameId = firebaseFirestoreService.createGame(playerName)
+
         _gameId.value = gameId
 
         // Initialize the game state with Player 1 (the creator)
-        _gameState.value = Game(
+        _gameState.value = GameState(
             gameId = gameId,
-            players = mapOf(playerName to Player(name = playerName, score = 0, isReady = false)), // Player 1 is the first player
+            players = mapOf(playerName to Player(name = playerName, score = 0, isReady = false)),
             status = "waiting",
             currentQuestion = null
         )
 
-        // Listen for the second player joining the game
-        listenForGameUpdates(gameId) { secondPlayerName ->
-            // Add Player 2 when they join
-            _gameState.value = _gameState.value?.copy(
-                players = _gameState.value?.players?.plus(
-                    secondPlayerName to Player(name = secondPlayerName, score = 0, isReady = false) // Player 2 joins the game
-                ) ?: emptyMap()
-            )
-        }
-
         return gameId
     }
 
-    // Join Game
+    // Join an existing game
     fun joinGame(gameId: String, playerName: String) {
-        // Create a new player entry
         val playerData = hashMapOf(
             "name" to playerName,
             "score" to 0,
-            "ready" to false // Initially, the player is not ready
+            "ready" to false
         )
 
-        // Add Player 2 to Firestore in the game document
         firebaseFirestoreService.joinGame(gameId, playerName, playerData)
 
-        // Listen for updates when the second player joins
         listenForGameUpdates(gameId) { secondPlayerName ->
             _gameState.value?.let {
                 val updatedGame = it.copy(
-                    players = it.players + (secondPlayerName to Player(name = secondPlayerName, score = 0, isReady = false)) // Add Player 2
+                    players = it.players + (secondPlayerName to Player(
+                        name = secondPlayerName,
+                        score = 0,
+                        isReady = false
+                    ))
                 )
-                _gameState.value = updatedGame
+                _gameState.value = updatedGame // Now this will work as _gameState is mutable
             }
         }
     }
-
-
-
 
     // Listen for game updates such as player joining and both players being ready
     fun listenForGameUpdates(gameId: String, onSecondPlayerJoined: (String) -> Unit) {
@@ -99,61 +109,74 @@ class OnlineMultiplayerViewModel : ViewModel() {
 
                 snapshot?.let { doc ->
                     val players = doc.get("players") as? Map<String, Map<String, Any>> ?: emptyMap()
+                    val status = doc.getString("status")
+                    val currentQuestion = doc.get("currentQuestion") as? TrickQuestion
 
-                    // Proceed if we have exactly two players
-                    if (players.size == 2) {
-                        // Find the second player (the one who is not the host)
-                        val hostPlayer = doc.getString("hostPlayer")
-                        val secondPlayerName = players.keys.firstOrNull { it != hostPlayer }
+                    // Update local game state when Firestore status is ready
+                    if (status == "ready") {
+                        Log.d("GameState", "Both players are ready, game status: $status")
+                        _gameState.value = _gameState.value?.copy(status = "ready", currentQuestion = currentQuestion)
+                    } else {
+                        // Update the game state without overriding the "ready" status if it's not yet "ready"
+                        _gameState.value = _gameState.value?.copy(
+                            players = players.mapValues { entry ->
+                                Player(
+                                    name = entry.key,
+                                    score = entry.value["score"] as? Int ?: 0,
+                                    isReady = entry.value["ready"] as? Boolean ?: false
+                                )
+                            },
+                            currentQuestion = currentQuestion
+                        )
+                    }
 
-                        // If we find the second player, trigger the callback
-                        secondPlayerName?.let {
-                            onSecondPlayerJoined(it)
-                        }
+                    // If second player joins, we need to trigger the update to reflect that
+                    val secondPlayerName = players.keys.firstOrNull { it != _gameState.value?.players?.keys?.first() }
+                    secondPlayerName?.let {
+                        Log.d("GameState", "Second player joined: $it")
+                        onSecondPlayerJoined(it) // Call the callback for second player
                     }
                 }
             }
     }
 
-
-
-    // Update Player Ready Status
+    // Update player ready status and check if both players are ready
     fun updatePlayerReadyStatus(gameId: String, playerName: String, isReady: Boolean) {
         viewModelScope.launch {
             firebaseFirestoreService.updatePlayerReadyStatus(gameId, playerName, isReady)
-        }
-    }
 
-    fun updateScore(gameId: String, playerName: String, newScore: Int) {
-        viewModelScope.launch {
-            // Update score in Firestore using FirebaseFirestoreService
-            firebaseFirestoreService.updateScore(gameId, playerName, newScore)
-
-            // Optionally, update game state locally after score update
             _gameState.value?.let { game ->
-                val updatedPlayer = game.players[playerName]?.copy(score = newScore)
+                val updatedPlayer = game.players[playerName]?.copy(isReady = isReady)
                 if (updatedPlayer != null) {
                     val updatedPlayers = game.players.toMutableMap()
                     updatedPlayers[playerName] = updatedPlayer
-                    _gameState.value = game.copy(players = updatedPlayers)
+
+                    // Check if both players are ready
+                    val allReady = updatedPlayers.values.all { it.isReady }
+
+                    // If both players are ready, set the status to "ready"
+                    if (allReady) {
+                        // Ensure the game status is updated to "ready"
+                        updateGameStatusToReady(gameId)
+
+                        // Now update local game state with "ready"
+                        _gameState.value = game.copy(status = "ready", players = updatedPlayers)
+                    } else {
+                        _gameState.value = game.copy(players = updatedPlayers)
+                    }
                 }
             }
         }
     }
 
-    fun updateQuestion(gameId: String) {
+    // Update game status to "ready"
+    fun updateGameStatusToReady(gameId: String) {
         viewModelScope.launch {
-            val newQuestion = generateTrickQuestion() // Get a new random question
+            firebaseFirestoreService.updateGameStatus(gameId, "ready")
 
-            // Update the game state with the new question
             _gameState.value?.let { game ->
-                _gameState.value = game.copy(currentQuestion = newQuestion)
+                _gameState.value = game.copy(status = "ready")
             }
-
-            // Optionally, you can update the Firestore with the new question if required
-            // firebaseFirestoreService.updateQuestion(gameId, newQuestion)
         }
     }
 }
-
-

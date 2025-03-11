@@ -8,6 +8,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -22,36 +23,51 @@ fun CreateOnlineGameScreen(navController: NavController, playerName: String) {
     val context = LocalContext.current
     val viewModel: OnlineMultiplayerViewModel = viewModel()
 
-    var gameId by remember { mutableStateOf<String?>(null) }
+    // Observe the gameState
+    val gameState by viewModel.gameState.collectAsState()
+
+    var gameId by rememberSaveable { mutableStateOf<String?>(null) }
     var secondPlayerName by remember { mutableStateOf<String?>(null) }
     var isSecondPlayerJoined by remember { mutableStateOf(false) }
     var isPlayerReady by remember { mutableStateOf(false) }
     var isGameReady by remember { mutableStateOf(false) }
 
-    // Create a new game session
-    LaunchedEffect(Unit) {
-        try {
-            gameId = viewModel.createGame(playerName) // Ensure this creates the game properly (Player 1)
-            if (gameId != null && gameId!!.isNotEmpty()) {
-                // Listen for updates from Firestore when the second player joins
-                viewModel.listenForGameUpdates(gameId!!) { secondPlayerNameFromServer ->
-                    secondPlayerName = secondPlayerNameFromServer
-                    isSecondPlayerJoined = true
+    // Flag to ensure the game is only created once
+    var gameCreated by remember { mutableStateOf(false) }
+
+    // Only create a game once and listen for updates
+    LaunchedEffect(gameCreated) {
+        if (!gameCreated) {
+            try {
+                // Game creation is now handled by ViewModel
+                if (gameId == null) {
+                    gameId = viewModel.createGame(playerName) // ViewModel handles game creation
+                    Log.d("CreateOnlineGameScreen", "Game session created with ID: $gameId")
+
+                    if (gameId != null && gameId!!.isNotEmpty()) {
+                        // Listen for updates from Firestore when the second player joins
+                        viewModel.listenForGameUpdates(gameId!!) { secondPlayerNameFromServer ->
+                            secondPlayerName = secondPlayerNameFromServer
+                            isSecondPlayerJoined = true
+                        }
+
+                        // Set gameCreated to true to prevent re-creating the game
+                        gameCreated = true
+                    } else {
+                        Toast.makeText(context, "Error creating game: Invalid gameId", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            } else {
-                Toast.makeText(context, "Error creating game: Invalid gameId", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Log.e("CreateOnlineGameScreen", "Error creating game: ${e.message}")
+                Toast.makeText(context, "Error creating game: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-        } catch (e: Exception) {
-            Log.e("CreateOnlineGameScreen", "Error creating game: ${e.message}")
-            Toast.makeText(context, "Error creating game: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // Listen for both players to be ready
-    LaunchedEffect(isPlayerReady, isSecondPlayerJoined) {
-        if (isPlayerReady && isSecondPlayerJoined) {
-            isGameReady = true
-            // Both players are ready, navigate to the game screen
+    // Listen for both players to be ready and navigate to the game screen
+    LaunchedEffect(gameState, isPlayerReady, isSecondPlayerJoined) {
+        // Check if both players are ready and game state is ready
+        if (gameState?.status == "ready" && isPlayerReady && isSecondPlayerJoined) {
             navController.navigate("onlineMultiplayerGame/$gameId/$playerName")
         }
     }
@@ -64,27 +80,20 @@ fun CreateOnlineGameScreen(navController: NavController, playerName: String) {
         verticalArrangement = Arrangement.Center
     ) {
         if (gameId == null) {
-            // Show loading indicator while game is being created
             CircularProgressIndicator()
             Text(text = "Creating Game...", fontSize = 24.sp)
         } else {
-            // Show the game ID after the game is created
             Text(text = "Game ID: $gameId", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-
             Spacer(modifier = Modifier.height(20.dp))
-
-            // Show waiting message until second player joins
             Text(text = "Waiting for player to join...", fontSize = 20.sp)
-
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Show the second player's name if they joined
             if (secondPlayerName != null) {
                 Text(text = "Second player: $secondPlayerName", fontSize = 20.sp)
             }
 
-            // If second player joined, show the "Ready" button
-            if (isSecondPlayerJoined) {
+            // Only show "Ready" button if player is not ready yet
+            if (isSecondPlayerJoined && !isPlayerReady) {
                 Button(
                     onClick = {
                         isPlayerReady = true
@@ -96,10 +105,16 @@ fun CreateOnlineGameScreen(navController: NavController, playerName: String) {
                 }
             }
 
-            // If both players are ready, navigate to the game screen
+            // Indicate that the game is ready
             if (isGameReady) {
                 Text(text = "Both players are ready. Starting the game...", fontSize = 24.sp)
             }
         }
     }
 }
+
+
+
+
+
+

@@ -50,8 +50,7 @@ fun OnlineMultiplayerModeSelectionScreen(navController: NavController) {
         // Create Game Button
         Button(
             onClick = {
-                // Create a game session and navigate to CreateOnlineGameScreen
-                val gameId = createGameSession(playerName) // This method should create the game session
+                // Remove this call, as the game creation logic is now handled in the ViewModel
                 navController.navigate("createOnlineGame/$playerName")
             },
             modifier = Modifier
@@ -60,7 +59,6 @@ fun OnlineMultiplayerModeSelectionScreen(navController: NavController) {
         ) {
             Text(text = "Create Game")
         }
-
 
         // Join Game Button
         Button(
@@ -76,6 +74,7 @@ fun OnlineMultiplayerModeSelectionScreen(navController: NavController) {
     }
 }
 
+
 fun fetchUsernameFromFirestore(userId: String, onUsernameFetched: (String) -> Unit) {
     val db = FirebaseFirestore.getInstance()
 
@@ -89,35 +88,6 @@ fun fetchUsernameFromFirestore(userId: String, onUsernameFetched: (String) -> Un
             // Handle failure (e.g., user not found)
             onUsernameFetched("Player") // Default to "Player" in case of error
         }
-}
-
-fun createGameSession(playerName: String): String {
-    val db = FirebaseFirestore.getInstance()
-    val gameRef = db.collection("games").document() // Automatically generates a unique ID
-    val gameId = gameRef.id // Get the generated game ID
-
-    val gameData = hashMapOf(
-        "players" to mapOf(
-            playerName to mapOf(
-                "name" to playerName,
-                "score" to 0, // Initialize with score 0
-                "ready" to false // Player is not ready initially
-            )
-        ),
-        "status" to "waiting" // Game status is waiting for players
-    )
-
-    // Add the game data to the Firestore
-    gameRef.set(gameData).addOnCompleteListener { task ->
-        if (task.isSuccessful) {
-            // Game session created successfully
-            Log.d("CreateGame", "Game session created with ID: $gameId")
-        } else {
-            Log.e("CreateGame", "Error creating game session", task.exception)
-        }
-    }
-
-    return gameId // Return the gameId for navigation
 }
 
 

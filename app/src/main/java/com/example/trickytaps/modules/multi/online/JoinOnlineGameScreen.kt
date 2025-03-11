@@ -134,6 +134,14 @@ fun ReadyScreen(navController: NavController, gameId: String, playerName: String
     val viewModel: OnlineMultiplayerViewModel = viewModel()
 
     var isReady by remember { mutableStateOf(false) }
+    var isHostReady by remember { mutableStateOf(false) }
+
+    // Listen for the host's readiness status from Firestore
+    LaunchedEffect(gameId) {
+        viewModel.listenForHostReadyStatus(gameId) { hostIsReady ->
+            isHostReady = hostIsReady
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -152,13 +160,9 @@ fun ReadyScreen(navController: NavController, gameId: String, playerName: String
         // Button to mark player as ready
         Button(
             onClick = {
-                // Mark the player as ready in Firestore
-                // Call the ViewModel's method to update the player's ready status
+                // Mark the opponent as ready in Firestore
                 viewModel.updatePlayerReadyStatus(gameId, playerName, true)
-
                 isReady = true
-                // Navigate to the next screen or game screen
-                navController.navigate("gameScreen/$gameId/$playerName")
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -176,7 +180,21 @@ fun ReadyScreen(navController: NavController, gameId: String, playerName: String
                 modifier = Modifier.padding(top = 16.dp)
             )
         }
+
+        // Proceed to the next screen only when both players are ready
+        if (isReady && isHostReady) {
+            Button(
+                onClick = {
+                    // Proceed to the multiplayer game screen once both players are ready
+                    navController.navigate("onlineOpponentMultiplayerGame/$gameId/$playerName")
+                },
+                modifier = Modifier.fillMaxWidth(0.8f)
+            ) {
+                Text(text = "Start Game")
+            }
+        }
     }
 }
+
 
 

@@ -23,6 +23,7 @@ import com.example.trickytaps.modules.multi.local.MultiplayerViewModel
 import com.example.trickytaps.modules.multi.online.CreateOnlineGameScreen
 import com.example.trickytaps.modules.multi.online.JoinOnlineGameScreen
 import com.example.trickytaps.modules.multi.online.OnlineMultiplayerGameScreen
+import com.example.trickytaps.modules.multi.online.OnlineOpponentMultiplayerGameScreen
 import com.example.trickytaps.modules.multi.online.OnlineMultiplayerModeSelectionScreen
 import com.example.trickytaps.modules.multi.online.ReadyScreen
 import com.example.trickytaps.modules.single.DifficultyModeScreen
@@ -183,6 +184,11 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
             val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
             val playerName = backStackEntry.arguments?.getString("playerName") ?: ""
             ReadyScreen(navController, gameId, playerName)
+        }
+        composable("onlineOpponentMultiplayerGame/{gameId}/{playerName}") { backStackEntry ->
+            val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
+            val playerName = backStackEntry.arguments?.getString("playerName") ?: ""
+            OnlineOpponentMultiplayerGameScreen(navController = navController, gameId = gameId, playerName = playerName)
         }
     }
 }

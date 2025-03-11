@@ -14,9 +14,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.trickytaps.TrickQuestion
 import com.example.trickytaps.generateTrickQuestion
-import com.example.trickytaps.ui.theme.TrickyTapsTheme
 
 @Composable
 fun OnlineMultiplayerGameScreen(
@@ -27,42 +25,68 @@ fun OnlineMultiplayerGameScreen(
     val viewModel: OnlineMultiplayerViewModel = viewModel()
     val gameState by viewModel.gameState.collectAsState()
 
-    // Handle the game's state and listen for updates
+    // Listen for game updates
     LaunchedEffect(gameId) {
-        // Listen for game updates and handle when the second player joins
         viewModel.listenForGameUpdates(gameId) { secondPlayerName ->
             // If second player name is updated, show it
             if (secondPlayerName != null) {
-                // Update the game state with the second player
-                // You can either show a message, update a UI state, etc.
-                // Example: You might want to update a UI element to reflect second player joining
                 Log.d("OnlineMultiplayerGameScreen", "Second player joined: $secondPlayerName")
             }
         }
     }
 
-    // If the game state is null, it means we're waiting for data, show a loading screen
+    // Show loading screen while waiting for game state
     if (gameState == null) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            CircularProgressIndicator()
             Text(text = "Waiting for the game to start...", fontSize = 20.sp)
         }
     } else {
         // Extract data from game state
         val players = gameState!!.players
         val status = gameState!!.status
-        val currentQuestion = gameState!!.currentQuestion // Use the question from game state
+        val currentQuestion = gameState!!.currentQuestion
 
-        // Display game screen
+        // Check if both players are ready
+        val bothPlayersReady = players.values.all { it.isReady }
+
+        if (bothPlayersReady && status != "ready") {
+            // If both players are ready, update the status and navigate to the game screen
+            viewModel.updatePlayerReadyStatus(gameId, playerName, true)
+            viewModel.updatePlayerReadyStatus(gameId, gameState!!.players.keys.first { it != playerName }, true) // Update second player
+
+            // Update the game status to "ready"
+            viewModel.updateGameStatus(gameId, "ready")
+        }
+
+        // Proceed to the respective game screen if both players are ready
+        if (gameState!!.status == "ready") {
+            navController.navigate("onlineMultiplayerGame/${gameState!!.gameId}/${playerName}")
+        } else {
+            // Display the waiting screen
+            Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Waiting for other player to be ready",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        // Display the game content
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            // Show the game status
             Text(
                 text = "Game Status: $status",
                 fontSize = 18.sp,

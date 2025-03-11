@@ -344,22 +344,26 @@ fun firebaseAuthWithGoogle(idToken: String, navController: NavController, contex
                     val userId = user.uid
                     val email = user.email ?: ""
 
+                    // Retrieve user data from Firestore
                     db.collection("users").document(userId).get()
                         .addOnSuccessListener { document ->
                             if (document.exists()) {
                                 val username = document.getString("username")
+                                // Check if the username exists
                                 if (username != null) {
-                                    // Detect the current screen and navigate accordingly
+                                    // If the user is already registered and is on the multiplayer auth screen, navigate accordingly
                                     val currentDestination = navController.currentBackStackEntry?.destination?.route
                                     if (currentDestination?.contains("multiplayerAuthScreen") == true) {
-                                        navController.navigate("multiplayerUsernameScreen")
+                                        navController.navigate("onlineMultiplayerModeSelection") // Navigate to online multiplayer mode selection
                                     } else {
-                                        navController.navigate("modeScreen/$username")
+                                        navController.navigate("modeScreen/$username") // Navigate to mode screen if not on multiplayer auth
                                     }
                                 } else {
-                                    navController.navigate("usernameScreen/$userId")
+                                    // If the username does not exist, navigate to multiplayer username screen
+                                    navController.navigate("multiplayerUsernameScreen/$userId")
                                 }
                             } else {
+                                // If the user is not found in Firestore, create a new user and navigate to username screen
                                 val newUser = mapOf(
                                     "email" to email,
                                     "easy" to 0,
@@ -369,7 +373,7 @@ fun firebaseAuthWithGoogle(idToken: String, navController: NavController, contex
                                 db.collection("users").document(userId)
                                     .set(newUser)
                                     .addOnSuccessListener {
-                                        navController.navigate("usernameScreen/$userId")
+                                        navController.navigate("multiplayerUsernameScreen/$userId")
                                     }
                                     .addOnFailureListener { e ->
                                         Toast.makeText(context, "Firestore error: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -385,8 +389,6 @@ fun firebaseAuthWithGoogle(idToken: String, navController: NavController, contex
             }
         }
 }
-
-
 
 fun getGoogleSignInClient(context: android.content.Context): GoogleSignInClient {
     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)

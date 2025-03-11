@@ -13,10 +13,10 @@ data class TrickQuestion(
 fun generateTrickQuestion(): TrickQuestion {
     val questions = listOf(
         "Choose the **color** of the text",
-        "Select the **odd** number",
-        "Tap the **largest** shape",
-        "Which one is **not** a fruit?",
-        "Pick the word spelled **incorrectly**",
+        "Select the odd number",
+        "Tap the largest shape",
+        "Which one is not a fruit?",
+        "Pick the word spelled incorrectly",
         "Choose the **color**",
         "Which shape has more sides?",
         "What is 2 + 2? (Trick question)",
@@ -83,19 +83,19 @@ fun generateTrickQuestion(): TrickQuestion {
                 displayedColor = colorMap[displayedColorName]!!
             )
         }
-        "Select the **odd** number" -> {
+        "Select the odd number" -> {
             val numbers = listOf("12", "7", "4", "8")
             TrickQuestion(randomQuestion, numbers, "7", Color.Black)
         }
-        "Tap the **largest** shape" -> {
+        "Tap the largest shape" -> {
             val shapes = listOf("Small Circle", "Large Square", "Medium Triangle", "Tiny Rectangle")
             TrickQuestion(randomQuestion, shapes, "Large Square", Color.Black)
         }
-        "Which one is **not** a fruit?" -> {
+        "Which one is not a fruit?" -> {
             val items = listOf("Apple", "Banana", "Tomato", "Carrot")
             TrickQuestion(randomQuestion, items, "Carrot", Color.Black)
         }
-        "Pick the word spelled **incorrectly**" -> {
+        "Pick the word spelled incorrectly" -> {
             val words = listOf("Recieve", "Receive", "Accomodate", "Accommodate")
             TrickQuestion(randomQuestion, words, "Recieve", Color.Black)
         }

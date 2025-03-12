@@ -60,7 +60,7 @@ fun TrickyTapsLandingPage(navController: NavController,db: FirebaseFirestore, us
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(
-                onClick = { navController.navigate("multiplayerModeSelection") },
+                onClick = { navController.navigate("multiplayerModeSelectionScreen") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                 modifier = Modifier.fillMaxWidth(0.6f)
             ) {

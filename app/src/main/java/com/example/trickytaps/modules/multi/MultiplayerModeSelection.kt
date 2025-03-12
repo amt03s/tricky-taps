@@ -49,7 +49,7 @@ fun MultiplayerModeSelection(navController: NavController) {
             Button(
                 onClick = {
                     // Navigate to local multiplayer screen
-                    navController.navigate("MultiplayerModeSelectionScreen")
+                    navController.navigate("localMultiplayerModeSelection")
                 },
                 modifier = Modifier
                     .fillMaxWidth(0.8f)

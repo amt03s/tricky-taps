@@ -126,7 +126,7 @@ fun GameScreen(navController: NavController,
         Box(modifier = Modifier.fillMaxSize().padding(24.dp)) {
 
             Text(
-                text = "Player: $username",
+                text = "$username",
                 fontSize = 22.sp,
                 modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
             )

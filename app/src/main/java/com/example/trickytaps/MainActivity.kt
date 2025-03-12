@@ -158,11 +158,11 @@ fun AppNavigation(viewModel: MultiplayerViewModel, onVolumeChange: (Float) -> Un
                     MediaPlayerManager.setVolume(newVolume)
                 }) // Pass viewModel
             }
-            composable("authScreen") { AuthScreen(navController) }
-            composable("usernameScreen/{userId}") { backStackEntry ->
-                val userId = backStackEntry.arguments?.getString("userId") ?: ""
-                UsernameScreen(navController, userId)
-            }
+//            composable("authScreen") { AuthScreen(navController) }
+//            composable("usernameScreen/{userId}") { backStackEntry ->
+//                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+//                UsernameScreen(navController, userId)
+//            }
             composable("leaderboardScreen/{username}/{score}/{initialTime}/{mode}") { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val score = backStackEntry.arguments?.getString("score")?.toIntOrNull() ?: 0

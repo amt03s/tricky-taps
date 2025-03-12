@@ -10,10 +10,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,6 +41,18 @@ fun JoinOnlineGameScreen(navController: NavController, playerName: String) {
         viewModel.fetchAvailableGames()
     }
 
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        // Back Button (Aligned to Top Start)
+        IconButton(
+            onClick = {
+                navController.navigate("onlineMultiplayerModeSelection") {
+                    popUpTo("onlineMultiplayerModeSelection") { inclusive = true } // Clears the back stack correctly
+                }
+            },
+            modifier = Modifier.align(Alignment.TopStart)
+        ) {
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+        }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -82,6 +96,7 @@ fun JoinOnlineGameScreen(navController: NavController, playerName: String) {
                     )
                 }
             }
+        }
         }
     }
 }

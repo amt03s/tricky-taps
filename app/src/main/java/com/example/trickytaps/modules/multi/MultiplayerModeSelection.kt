@@ -2,7 +2,11 @@
 package com.example.trickytaps.modules.multi
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,45 +18,59 @@ import androidx.navigation.NavController
 
 @Composable
 fun MultiplayerModeSelection(navController: NavController) {
-    // UI to choose between Local or Online Multiplayer
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Choose Multiplayer Mode",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-
-        // Local Multiplayer Button
-        Button(
+    Box (modifier = Modifier.fillMaxSize().padding(16.dp)){
+        // Back Button (Aligned to Top Start)
+        IconButton(
             onClick = {
-                // Navigate to local multiplayer screen
-                navController.navigate("MultiplayerModeSelectionScreen")
+                    navController.navigate("landingPage"){
+                popUpTo("landingPage") { inclusive = true } // Clears the back stack correctly
+            }
             },
-            modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .padding(vertical = 8.dp)
+            modifier = Modifier.align(Alignment.TopStart)
         ) {
-            Text(text = "Local Multiplayer")
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
         }
-
-        // Online Multiplayer Button
-        Button(
-            onClick = {
-                // Navigate to online multiplayer screen
-                navController.navigate("multiplayerAuthScreen")
-            },
+        // UI to choose between Local or Online Multiplayer
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .padding(vertical = 8.dp)
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text(text = "Online Multiplayer")
+            Text(
+                text = "Choose Multiplayer Mode",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+
+            // Local Multiplayer Button
+            Button(
+                onClick = {
+                    // Navigate to local multiplayer screen
+                    navController.navigate("MultiplayerModeSelectionScreen")
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(vertical = 8.dp)
+            ) {
+                Text(text = "Local Multiplayer")
+            }
+
+            // Online Multiplayer Button
+            Button(
+                onClick = {
+                    // Navigate to online multiplayer screen
+                    navController.navigate("multiplayerAuthScreen")
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .padding(vertical = 8.dp)
+            ) {
+                Text(text = "Online Multiplayer")
+            }
         }
     }
+
 }

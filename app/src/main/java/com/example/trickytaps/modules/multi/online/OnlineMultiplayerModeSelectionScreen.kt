@@ -3,7 +3,11 @@ package com.example.trickytaps.modules.multi.online
 
 import android.util.Log
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,13 +37,24 @@ fun OnlineMultiplayerModeSelectionScreen(navController: NavController) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+    Box(){
+        IconButton(
+            onClick = {
+                navController.navigate("multiplayerAuthScreen"){
+                    popUpTo("multiplayerAuthScreen") { inclusive = true } // Clears the back stack correctly
+                }
+            },
+            modifier = Modifier.align(Alignment.TopStart)
+        ) {
+            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+        }
+        Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
-    ) {
+        ) {
         Text(
             text = "Online Multiplayer",
             fontSize = 24.sp,
@@ -72,6 +87,8 @@ fun OnlineMultiplayerModeSelectionScreen(navController: NavController) {
             Text(text = "Join Game")
         }
     }
+    }
+
 }
 
 
